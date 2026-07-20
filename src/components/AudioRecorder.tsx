@@ -9,6 +9,7 @@ interface AudioRecorderProps {
   language: Language;
   onUseForClone?: (blob: Blob, url: string) => void;
   onSaveToCabinet?: (blob: Blob, name: string) => void;
+  onRecordingStateChange?: (isRecording: boolean) => void;
 }
 
 export default function AudioRecorder({ 
@@ -17,7 +18,8 @@ export default function AudioRecorder({
   outputNode, 
   language,
   onUseForClone,
-  onSaveToCabinet
+  onSaveToCabinet,
+  onRecordingStateChange
 }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -80,6 +82,7 @@ export default function AudioRecorder({
 
       mediaRecorder.start();
       setIsRecording(true);
+      onRecordingStateChange?.(true);
       setRecordingSeconds(0);
       setAudioUrl(null);
       setRecordingBlob(null);
@@ -103,6 +106,7 @@ export default function AudioRecorder({
       timerRef.current = null;
     }
     setIsRecording(false);
+    onRecordingStateChange?.(false);
   };
 
   const deleteRecording = () => {

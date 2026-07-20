@@ -116,7 +116,7 @@ export default function Header({
   ];
 
   return (
-    <header className="border-b-2 border-black bg-white select-none relative">
+    <header className="border-b-2 border-black bg-white select-none sticky top-0 z-30">
       <div className="grid grid-cols-[1fr_auto] md:grid-cols-[280px_1fr_280px] lg:grid-cols-[350px_1fr_350px] items-stretch w-full">
         {/* Brand box */}
         <div className="p-4 sm:p-5 border-r-2 border-black flex items-center space-x-3.5">

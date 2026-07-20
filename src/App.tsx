@@ -21,6 +21,7 @@ import ControlSlider from './components/ControlSlider';
 import Footer from './components/Footer';
 import AICloneChat from './components/AICloneChat';
 import SavedCabinet from './components/SavedCabinet';
+import AudioStudio from './components/AudioStudio';
 
 import { SavedFileRecord, getAllAudioFiles, saveAudioFile, deleteAudioFile, updateAudioFileName } from './lib/db';
 
@@ -64,6 +65,43 @@ export default function App() {
   const [isAgcEnabled, setIsAgcEnabled] = useState<boolean>(true);
   const [agcTargetLevel, setAgcTargetLevel] = useState<number>(0.20);
   const [currentAgcGainDb, setCurrentAgcGainDb] = useState<number>(0.0);
+
+  // No-Headphones / Feedback Reduction State
+  const [isNoHeadphonesMode, setIsNoHeadphonesMode] = useState<boolean>(false);
+  const [noiseGateThreshold, setNoiseGateThreshold] = useState<number>(0.012);
+  const [muteMonitorDuringRecord, setMuteMonitorDuringRecord] = useState<boolean>(true);
+  const [isRecordingActive, setIsRecordingActive] = useState<boolean>(false);
+
+  const isNoHeadphonesModeRef = useRef<boolean>(false);
+  const noiseGateThresholdRef = useRef<number>(0.012);
+  const muteMonitorDuringRecordRef = useRef<boolean>(true);
+  const isRecordingActiveRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    isNoHeadphonesModeRef.current = isNoHeadphonesMode;
+  }, [isNoHeadphonesMode]);
+
+  useEffect(() => {
+    noiseGateThresholdRef.current = noiseGateThreshold;
+  }, [noiseGateThreshold]);
+
+  useEffect(() => {
+    muteMonitorDuringRecordRef.current = muteMonitorDuringRecord;
+  }, [muteMonitorDuringRecord]);
+
+  useEffect(() => {
+    isRecordingActiveRef.current = isRecordingActive;
+
+    // Dynamically mute speaker output when recording is active to block feedback loop
+    const ctx = audioCtxRef.current;
+    if (ctx && masterGainNodeRef.current) {
+      if (isNoHeadphonesMode && muteMonitorDuringRecord && isRecordingActive) {
+        masterGainNodeRef.current.gain.setTargetAtTime(0.0, ctx.currentTime, 0.01);
+      } else {
+        masterGainNodeRef.current.gain.setTargetAtTime(volume, ctx.currentTime, 0.01);
+      }
+    }
+  }, [isRecordingActive, volume, isNoHeadphonesMode, muteMonitorDuringRecord]);
 
   // AGC Refs for non-blocking dynamic calculations
   const isAgcEnabledRef = useRef<boolean>(true);
@@ -502,15 +540,6 @@ export default function App() {
       if (agcIntervalRef.current) clearInterval(agcIntervalRef.current);
       currentAgcGainRef.current = 1.0;
       agcIntervalRef.current = window.setInterval(() => {
-        if (!isAgcEnabledRef.current) {
-          setCurrentAgcGainDb(0.0);
-          currentAgcGainRef.current = 1.0;
-          if (agcGainNodeRef.current && audioCtxRef.current) {
-            agcGainNodeRef.current.gain.setTargetAtTime(1.0, audioCtxRef.current.currentTime, 0.015);
-          }
-          return;
-        }
-
         const analyserNode = agcAnalyserNodeRef.current;
         const gainNode = agcGainNodeRef.current;
         const currentContext = audioCtxRef.current;
@@ -540,9 +569,24 @@ export default function App() {
           console.warn("AGC analyzer retrieval failed:", e);
         }
 
+        if (!isAgcEnabledRef.current) {
+          if (isNoHeadphonesModeRef.current) {
+            // Noise Gate active even when AGC is disabled
+            const nextGain = rms < noiseGateThresholdRef.current ? 0.001 : 1.0;
+            gainNode.gain.setTargetAtTime(nextGain, currentContext.currentTime, 0.015);
+          } else {
+            setCurrentAgcGainDb(0.0);
+            currentAgcGainRef.current = 1.0;
+            gainNode.gain.setTargetAtTime(1.0, currentContext.currentTime, 0.015);
+          }
+          return;
+        }
+
         // Noise floor gate: avoid boosting silence/static hiss
         let targetGain = 1.0;
-        if (rms < 0.005) {
+        if (isNoHeadphonesModeRef.current && rms < noiseGateThresholdRef.current) {
+          targetGain = 0.001; // Gate closed - mute microphone input
+        } else if (rms < 0.005) {
           targetGain = 1.0;
         } else {
           // targetGain = targetLevel / rms
@@ -550,7 +594,7 @@ export default function App() {
         }
 
         // Clamp the gain offset to prevent excessive peak loudness (-12dB to +18dB)
-        const minGain = 0.25;
+        const minGain = (isNoHeadphonesModeRef.current && rms < noiseGateThresholdRef.current) ? 0.001 : 0.25;
         const maxGain = 8.0;
         const clampedTarget = Math.max(minGain, Math.min(maxGain, targetGain));
 
@@ -670,7 +714,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-industrial-bg text-black min-h-screen flex flex-col overflow-x-hidden font-sans antialiased">
+    <div className="bg-industrial-bg text-black min-h-screen flex flex-col overflow-x-clip font-sans antialiased">
       {/* Dynamic Navigation Header */}
       <Header 
         language={language} 
@@ -702,6 +746,7 @@ export default function App() {
               language={language}
               onUseForClone={handleUseForClone}
               onSaveToCabinet={(blob, name) => handleSaveFile(blob, name, 'modulator')}
+              onRecordingStateChange={setIsRecordingActive}
             />
           </div>
         </section>
@@ -735,6 +780,119 @@ export default function App() {
                 </button>
               </div>
             )}
+
+            {/* NO-HEADPHONES & NOISE SUPPRESSION PANEL */}
+            <div className="bg-white border-2 border-black p-4.5 sm:p-5 relative neo-shadow">
+              <div className="flex items-center justify-between border-b-2 border-black pb-2.5 mb-3.5">
+                <div className="flex items-center space-x-2">
+                  <div className={`p-1 border border-black ${isNoHeadphonesMode ? 'bg-industrial-orange' : 'bg-neutral-100'}`}>
+                    <Volume2 className="w-4 h-4 text-black" />
+                  </div>
+                  <div>
+                    <h4 className="font-mono text-[11px] font-bold uppercase tracking-wider">
+                      {language === 'en' ? 'NO-HEADPHONES RECORDING' : 'REGISTRAZIONE SENZA CUFFIE'}
+                    </h4>
+                    <span className="font-sans text-[9px] text-black/50 block">
+                      {language === 'en' ? 'Advanced Noise Gate & Anti-Feedback' : 'Filtro Antirumore Dinamico & Soppressione Larsen'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsNoHeadphonesMode(!isNoHeadphonesMode);
+                    triggerToast(
+                      language === 'en'
+                        ? `No-Headphones Mode ${!isNoHeadphonesMode ? 'Enabled' : 'Disabled'}`
+                        : `Modalità Senza Cuffie ${!isNoHeadphonesMode ? 'Attivata' : 'Disattivata'}`
+                    );
+                  }}
+                  className={`px-2.5 py-1.5 border-2 border-black font-mono text-[9px] font-bold uppercase tracking-wider transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px] ${
+                    isNoHeadphonesMode
+                      ? 'bg-black text-white hover:bg-neutral-800'
+                      : 'bg-white text-black hover:bg-neutral-100'
+                  }`}
+                >
+                  {isNoHeadphonesMode ? (language === 'en' ? 'ACTIVE' : 'ATTIVA') : (language === 'en' ? 'OFF' : 'SPENTA')}
+                </button>
+              </div>
+
+              {isNoHeadphonesMode ? (
+                <div className="space-y-3.5 animate-fadeIn">
+                  {/* Informative alert badge */}
+                  <div className="bg-[#eef2f6] border border-black p-2 flex items-start space-x-2 text-black text-[10px]">
+                    <Sparkle className="w-3.5 h-3.5 text-industrial-orange flex-shrink-0 mt-0.5 animate-pulse" />
+                    <p className="font-sans text-[10px] text-black/75 leading-relaxed">
+                      {language === 'en'
+                        ? 'Hardware Echo Cancellation (AEC) is active. The software Noise Gate and Auto-Mute features will now filter out speaker feedback and static background hiss.'
+                        : 'L\'Eco-Cancellation hardware (AEC) è attiva. Il Noise Gate software e l\'Auto-Mute filtreranno i fischi di feedback e i rumori di fondo.'}
+                    </p>
+                  </div>
+
+                  {/* Auto-Mute switch */}
+                  <div className="flex items-center justify-between bg-neutral-50 border border-black p-2.5">
+                    <div className="space-y-0.5 pr-2">
+                      <span className="font-mono text-[9px] font-bold uppercase block">
+                        {language === 'en' ? 'AUTO-MUTE MONITOR' : 'AUTO-MUTE MONITORING'}
+                      </span>
+                      <span className="font-sans text-[9px] text-black/60 block leading-tight">
+                        {language === 'en'
+                          ? 'Mutes speakers during active recording to prevent 100% of feedback.'
+                          : 'Spegne le casse durante la registrazione per azzerare al 100% il feedback.'}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setMuteMonitorDuringRecord(!muteMonitorDuringRecord)}
+                      className={`px-2 py-1 border border-black font-mono text-[8px] font-bold uppercase transition-colors ${
+                        muteMonitorDuringRecord ? 'bg-industrial-orange text-black' : 'bg-white text-black'
+                      }`}
+                    >
+                      {muteMonitorDuringRecord ? (language === 'en' ? 'ON' : 'SI') : (language === 'en' ? 'OFF' : 'NO')}
+                    </button>
+                  </div>
+
+                  {/* Noise Gate threshold slider */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex justify-between text-[9px] font-mono font-bold uppercase">
+                      <span className="text-black/60">
+                        {language === 'en' ? 'NOISE GATE SENSITIVITY' : 'SOGLIA FILTRO ANTIRUMORE (GATE)'}
+                      </span>
+                      <span className="text-black">
+                        {noiseGateThreshold === 0.005 
+                          ? (language === 'en' ? 'LOW (0.005)' : 'BASSA (0.005)') 
+                          : noiseGateThreshold === 0.012 
+                          ? (language === 'en' ? 'OPTIMAL (0.012)' : 'OTTIMALE (0.012)')
+                          : noiseGateThreshold === 0.025
+                          ? (language === 'en' ? 'HIGH (0.025)' : 'ALTA (0.025)')
+                          : `${noiseGateThreshold.toFixed(3)}`}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0.002"
+                        max="0.05"
+                        step="0.001"
+                        value={noiseGateThreshold}
+                        onChange={(e) => setNoiseGateThreshold(parseFloat(e.target.value))}
+                        className="brutalist-range flex-1"
+                      />
+                    </div>
+                    <p className="font-sans text-[9px] text-black/45 leading-normal">
+                      {language === 'en'
+                        ? 'Higher values block louder room/speaker noise but require you to speak louder.'
+                        : 'Valori più alti bloccano rumori più forti (es. ventole o casse) ma richiedono di parlare più vicino.'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="font-sans text-[10px] sm:text-xs text-black/50 leading-relaxed">
+                  {language === 'en'
+                    ? 'Toggle this mode on to enable real-time speaker feedback protection and a customizable microphone noise gate for crystal-clear recordings without headphones.'
+                    : 'Attiva questa modalità per abilitare la protezione anti-feedback acustico in tempo reale e un noise gate microfonico personalizzabile per registrare senza cuffie.'}
+                </p>
+              )}
+            </div>
 
             {/* Vocal Modeling Sliders Panel */}
             <div className="bg-white border-2 border-black p-4.5 sm:p-6 flex-1 flex flex-col justify-between relative neo-shadow">
@@ -1023,6 +1181,19 @@ export default function App() {
         </section>
 
       </main>
+
+      {/* AUDIO MONTAGE & MIXING STUDIO */}
+      <section className="p-4 sm:p-5 border-b-2 border-black bg-industrial-bg">
+        <div className="max-w-[1400px] mx-auto">
+          <AudioStudio 
+            language={language}
+            savedFiles={savedFiles}
+            serverFolders={serverFolders}
+            onSaveFile={handleSaveFile}
+            triggerToast={triggerToast}
+          />
+        </div>
+      </section>
 
       {/* Technical footer details */}
       <Footer language={language} />
