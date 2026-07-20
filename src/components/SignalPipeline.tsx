@@ -1,4 +1,4 @@
-import { Mic, Shield, Repeat, SlidersHorizontal, Volume2, Cpu } from 'lucide-react';
+import { Mic, Shield, Repeat, SlidersHorizontal, Volume2, Cpu, Activity } from 'lucide-react';
 import { Language } from '../types';
 
 interface SignalPipelineProps {
@@ -24,6 +24,14 @@ export default function SignalPipeline({ isEngineRunning, language, stats }: Sig
       titleIt: 'Antirimbozzo (80 Hz)',
       descEn: 'Removes microphone low-end hum',
       descIt: 'Elimina risonanze sub-basse del mic',
+    },
+    {
+      id: 'agc',
+      icon: Activity,
+      titleEn: 'Automatic Gain Control (AGC)',
+      titleIt: 'Ctrl Automatico Guadagno (AGC)',
+      descEn: 'Dynamic signal level normalization',
+      descIt: 'Normalizzazione dinamica del segnale',
     },
     {
       id: 'pitch',

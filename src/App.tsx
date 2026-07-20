@@ -57,6 +57,28 @@ export default function App() {
   const masterGainNodeRef = useRef<GainNode | null>(null);
   const analyserNodeRef = useRef<AnalyserNode | null>(null);
 
+  // Automatic Gain Control (AGC) State
+  const [isAgcEnabled, setIsAgcEnabled] = useState<boolean>(true);
+  const [agcTargetLevel, setAgcTargetLevel] = useState<number>(0.20);
+  const [currentAgcGainDb, setCurrentAgcGainDb] = useState<number>(0.0);
+
+  // AGC Refs for non-blocking dynamic calculations
+  const isAgcEnabledRef = useRef<boolean>(true);
+  const agcTargetLevelRef = useRef<number>(0.20);
+  const agcGainNodeRef = useRef<GainNode | null>(null);
+  const agcAnalyserNodeRef = useRef<AnalyserNode | null>(null);
+  const agcIntervalRef = useRef<number | null>(null);
+  const currentAgcGainRef = useRef<number>(1.0);
+
+  // Synchronize dynamic AGC parameters to refs to bypass setInterval stale closure
+  useEffect(() => {
+    isAgcEnabledRef.current = isAgcEnabled;
+  }, [isAgcEnabled]);
+
+  useEffect(() => {
+    agcTargetLevelRef.current = agcTargetLevel;
+  }, [agcTargetLevel]);
+
   // Audio statistics
   const [stats, setStats] = useState<AudioStats | null>(null);
 
@@ -190,6 +212,16 @@ export default function App() {
       lowCut.frequency.setValueAtTime(80, ctx.currentTime);
       lowCutNodeRef.current = lowCut;
 
+      // AGC Node 1: Dynamic gain controller
+      const agcGain = ctx.createGain();
+      agcGain.gain.setValueAtTime(1.0, ctx.currentTime);
+      agcGainNodeRef.current = agcGain;
+
+      // AGC Node 2: Dynamic input volume analyzer (inspects post-lowcut signal)
+      const agcAnalyser = ctx.createAnalyser();
+      agcAnalyser.fftSize = 256; // fast window for tracking
+      agcAnalyserNodeRef.current = agcAnalyser;
+
       // AudioWorklet Pitch Shift Node
       const pitchNode = new AudioWorkletNode(ctx, 'pitch-processor');
       pitchWorkletNodeRef.current = pitchNode;
@@ -231,9 +263,14 @@ export default function App() {
       analyserNodeRef.current = analyser;
 
       // 3. Bind the DSP chain sequentially
-      // Mic -> LowCut Filter -> PitchWorklet -> Warmth EQ -> Nasal EQ -> Clarity EQ -> Limiter -> Analyser -> Volume Gain -> Speaker Output
+      // Mic -> LowCut Filter -> AgcGain -> PitchWorklet -> Warmth EQ -> Nasal EQ -> Clarity EQ -> Limiter -> Analyser -> Volume Gain -> Speaker Output
       microphoneNodeRef.current.connect(lowCut);
-      lowCut.connect(pitchNode);
+      
+      // Feed-forward connection: split lowCut output to both agcGain and agcAnalyser
+      lowCut.connect(agcGain);
+      lowCut.connect(agcAnalyser);
+
+      agcGain.connect(pitchNode);
       pitchNode.connect(warmthEq);
       warmthEq.connect(nasalEq);
       nasalEq.connect(clarityEq);
@@ -260,6 +297,79 @@ export default function App() {
         latency: Math.round(ctx.baseLatency ? ctx.baseLatency * 1000 : 20),
       });
 
+      // Start Dynamic Automatic Gain Control (AGC) high-frequency tracking loop
+      if (agcIntervalRef.current) clearInterval(agcIntervalRef.current);
+      currentAgcGainRef.current = 1.0;
+      agcIntervalRef.current = window.setInterval(() => {
+        if (!isAgcEnabledRef.current) {
+          setCurrentAgcGainDb(0.0);
+          currentAgcGainRef.current = 1.0;
+          if (agcGainNodeRef.current && audioCtxRef.current) {
+            agcGainNodeRef.current.gain.setTargetAtTime(1.0, audioCtxRef.current.currentTime, 0.015);
+          }
+          return;
+        }
+
+        const analyserNode = agcAnalyserNodeRef.current;
+        const gainNode = agcGainNodeRef.current;
+        const currentContext = audioCtxRef.current;
+        if (!analyserNode || !gainNode || !currentContext) return;
+
+        let rms = 0.0;
+        try {
+          if (analyserNode.getFloatTimeDomainData) {
+            const dataArray = new Float32Array(analyserNode.fftSize);
+            analyserNode.getFloatTimeDomainData(dataArray);
+            let sum = 0.0;
+            for (let i = 0; i < dataArray.length; i++) {
+              sum += dataArray[i] * dataArray[i];
+            }
+            rms = Math.sqrt(sum / dataArray.length);
+          } else {
+            const dataArray = new Uint8Array(analyserNode.fftSize);
+            analyserNode.getByteTimeDomainData(dataArray);
+            let sum = 0.0;
+            for (let i = 0; i < dataArray.length; i++) {
+              const val = (dataArray[i] - 128) / 128;
+              sum += val * val;
+            }
+            rms = Math.sqrt(sum / dataArray.length);
+          }
+        } catch (e) {
+          console.warn("AGC analyzer retrieval failed:", e);
+        }
+
+        // Noise floor gate: avoid boosting silence/static hiss
+        let targetGain = 1.0;
+        if (rms < 0.005) {
+          targetGain = 1.0;
+        } else {
+          // targetGain = targetLevel / rms
+          targetGain = agcTargetLevelRef.current / rms;
+        }
+
+        // Clamp the gain offset to prevent excessive peak loudness (-12dB to +18dB)
+        const minGain = 0.25;
+        const maxGain = 8.0;
+        const clampedTarget = Math.max(minGain, Math.min(maxGain, targetGain));
+
+        const lastGain = currentAgcGainRef.current;
+        // Asymmetric attack/release envelope: Fast attack (limiting/attenuation) and slow release (boost)
+        const envelopeCoefficient = clampedTarget < lastGain ? 0.35 : 0.04;
+        const nextGain = lastGain + (clampedTarget - lastGain) * envelopeCoefficient;
+
+        currentAgcGainRef.current = nextGain;
+
+        try {
+          gainNode.gain.setTargetAtTime(nextGain, currentContext.currentTime, 0.02);
+        } catch (e) {
+          console.warn("AGC gain scaling failed:", e);
+        }
+
+        const dbOffset = 20 * Math.log10(nextGain);
+        setCurrentAgcGainDb(dbOffset);
+      }, 40);
+
       setIsEngineRunning(true);
       triggerToast(
         language === 'en' 
@@ -281,6 +391,14 @@ export default function App() {
   };
 
   const stopAudioEngine = () => {
+    // Teardown AGC processing interval
+    if (agcIntervalRef.current) {
+      clearInterval(agcIntervalRef.current);
+      agcIntervalRef.current = null;
+    }
+    currentAgcGainRef.current = 1.0;
+    setCurrentAgcGainDb(0.0);
+
     // Teardown Web Audio Context
     if (audioCtxRef.current) {
       try {
@@ -443,6 +561,67 @@ export default function App() {
                   helpText={language === 'en' ? 'Lower frames decrease latency but add buzz. 30-45ms is physically optimal.' : 'Tempi bassi riducono il ritardo ma generano fruscii. 30-45ms rappresenta il range biologico.'}
                   icon={<Sparkle className="w-4 h-4" />}
                 />
+
+                {/* Automatic Gain Control (AGC) Panel */}
+                <div className="border-t-2 border-black pt-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-mono text-[10px] sm:text-xs font-bold text-black uppercase tracking-wider flex items-center">
+                        <Activity className="w-4 h-4 mr-1.5 text-industrial-orange" />
+                        {language === 'en' ? 'Automatic Gain Control (AGC)' : 'Ctrl Automatico Guadagno (AGC)'}
+                      </h4>
+                      <span className="font-mono text-[8px] text-black/50 uppercase tracking-wider block mt-0.5">
+                        {language === 'en' ? 'Normalizes input levels dynamically' : 'Normalizzazione dinamica pre-shifter'}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => setIsAgcEnabled(!isAgcEnabled)}
+                      className={`px-3 py-1.5 border-2 border-black font-mono text-[10px] font-bold uppercase tracking-wider transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px] ${
+                        isAgcEnabled
+                          ? 'bg-black text-white hover:bg-neutral-800'
+                          : 'bg-white text-black hover:bg-neutral-100'
+                      }`}
+                    >
+                      {isAgcEnabled ? (language === 'en' ? 'ACTIVE' : 'ATTIVO') : (language === 'en' ? 'BYPASS' : 'BYPASS')}
+                    </button>
+                  </div>
+
+                  {isAgcEnabled && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-neutral-50 border-2 border-black p-2.5 flex flex-col justify-between">
+                        <span className="font-mono text-[8px] text-black/50 uppercase font-bold block mb-0.5">
+                          {language === 'en' ? 'DYNAMIC_GAIN_OFFSET' : 'COMPENSAZIONE_GUADAGNO'}
+                        </span>
+                        <span className={`font-mono font-extrabold text-xs tracking-wider ${isEngineRunning ? 'text-industrial-orange' : 'text-black/40'}`}>
+                          {isEngineRunning ? `${currentAgcGainDb >= 0 ? '+' : ''}${currentAgcGainDb.toFixed(1)} dB` : '-- dB'}
+                        </span>
+                      </div>
+                      <div className="bg-neutral-50 border-2 border-black p-2.5 flex flex-col justify-between">
+                        <span className="font-mono text-[8px] text-black/50 uppercase font-bold block mb-0.5">
+                          {language === 'en' ? 'INPUT_AMPLITUDE' : 'STATO_SORGENTE'}
+                        </span>
+                        <span className="font-mono font-extrabold text-[10px] tracking-wider text-black">
+                          {isEngineRunning ? (currentAgcGainDb > 1.5 ? (language === 'en' ? 'WEAK (BOOST)' : 'DEBOLE (+)') : currentAgcGainDb < -1.5 ? (language === 'en' ? 'STRONG (ATTEN)' : 'FORTE (-)') : (language === 'en' ? 'OPTIMAL' : 'OTTIMALE')) : '--'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <ControlSlider
+                    id="agc-target-slider"
+                    label={language === 'en' ? 'AGC Target Normalization (RMS)' : 'Target Normalizzazione AGC (RMS)'}
+                    badgeValue={isAgcEnabled ? agcTargetLevel.toFixed(2) : 'OFF'}
+                    minValue={0.05}
+                    maxValue={0.4}
+                    step={0.01}
+                    currentValue={agcTargetLevel}
+                    onChange={(val) => {
+                      setAgcTargetLevel(val);
+                    }}
+                    helpText={language === 'en' ? 'Target signal intensity to normalize towards. Optimal range is 0.15 - 0.25.' : 'Regola l\'intensità del segnale a cui normalizzare. Valore ottimale: 0.15 - 0.25.'}
+                  />
+                </div>
 
                 {/* Equalizer Formants Section */}
                 <div className="border-t-2 border-black pt-5 space-y-4">
