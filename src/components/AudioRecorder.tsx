@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Square, Download, Trash2, Radio, Info, Sparkles } from 'lucide-react';
+import { Play, Square, Download, Trash2, Radio, Info, Sparkles, FolderHeart } from 'lucide-react';
 import { Language } from '../types';
 
 interface AudioRecorderProps {
@@ -8,6 +8,7 @@ interface AudioRecorderProps {
   outputNode: AudioNode | null;
   language: Language;
   onUseForClone?: (blob: Blob, url: string) => void;
+  onSaveToCabinet?: (blob: Blob, name: string) => void;
 }
 
 export default function AudioRecorder({ 
@@ -15,7 +16,8 @@ export default function AudioRecorder({
   audioCtx, 
   outputNode, 
   language,
-  onUseForClone
+  onUseForClone,
+  onSaveToCabinet
 }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -199,20 +201,35 @@ export default function AudioRecorder({
             </div>
 
             {/* Actions Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <a
-                href={audioUrl}
-                download="aura-voice-modulated.webm"
-                className="py-2 px-3 bg-white hover:bg-industrial-bg text-black font-mono text-[10px] font-bold uppercase tracking-wider border-2 border-black text-center flex items-center justify-center gap-1.5 transition-all duration-75"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>{language === 'en' ? 'Download File' : 'Scarica File'}</span>
-              </a>
+            <div className="flex flex-col gap-2 w-full text-left">
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={audioUrl}
+                  download="aura-voice-modulated.webm"
+                  className="py-2 px-3 bg-white hover:bg-industrial-bg text-black font-mono text-[10px] font-bold uppercase tracking-wider border-2 border-black text-center flex items-center justify-center gap-1.5 transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px]"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{language === 'en' ? 'Download' : 'Scarica'}</span>
+                </a>
+
+                {onSaveToCabinet && recordingBlob && (
+                  <button
+                    onClick={() => {
+                      const name = `modulated_vocal_${Date.now().toString().slice(-4)}.webm`;
+                      onSaveToCabinet(recordingBlob, name);
+                    }}
+                    className="py-2 px-3 bg-white hover:bg-industrial-bg text-black font-mono text-[10px] font-bold uppercase tracking-wider border-2 border-black flex items-center justify-center gap-1.5 transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px]"
+                  >
+                    <FolderHeart className="w-3.5 h-3.5 text-industrial-orange" />
+                    <span>{language === 'en' ? 'Save Vault' : 'Salva'}</span>
+                  </button>
+                )}
+              </div>
 
               {onUseForClone && recordingBlob && (
                 <button
                   onClick={() => onUseForClone(recordingBlob, audioUrl)}
-                  className="py-2 px-3 bg-black text-white hover:bg-white hover:text-black font-mono text-[10px] font-bold uppercase tracking-wider border-2 border-black flex items-center justify-center gap-1.5 transition-all duration-75"
+                  className="w-full py-2.5 px-3 bg-black text-white hover:bg-white hover:text-black font-mono text-[10px] font-bold uppercase tracking-wider border-2 border-black flex items-center justify-center gap-1.5 transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px]"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-industrial-orange animate-pulse" />
                   <span>{language === 'en' ? 'Train AI Chat' : 'Invia a Chat AI'}</span>

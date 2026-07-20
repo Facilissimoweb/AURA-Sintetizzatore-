@@ -13,7 +13,8 @@ import {
   Mic, 
   CheckCircle,
   FileAudio,
-  AlertCircle
+  AlertCircle,
+  FolderHeart
 } from "lucide-react";
 import { Language } from "../types";
 
@@ -22,6 +23,7 @@ interface Message {
   role: "user" | "model";
   content: string;
   audioUrl?: string; // Cache the generated TTS URL if real
+  audioBlob?: Blob;  // Cache the actual audio Blob to allow saving to cabinet
 }
 
 interface AICloneChatProps {
@@ -30,13 +32,15 @@ interface AICloneChatProps {
   recordedBlob: Blob | null;
   recordedUrl: string | null;
   onClearRecorded: () => void;
+  onSaveToCabinet?: (blob: Blob, name: string, source: 'chat_tts') => void;
 }
 
 export default function AICloneChat({ 
   language, 
   recordedBlob, 
   recordedUrl, 
-  onClearRecorded 
+  onClearRecorded,
+  onSaveToCabinet
 }: AICloneChatProps) {
   // Config state
   const [config, setConfig] = useState({ hasGeminiKey: true, hasElevenLabsKey: false });
@@ -363,9 +367,9 @@ export default function AICloneChat({
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       
-      // Cache URL on the message
+      // Cache URL and Blob on the message
       setMessages((prev) => 
-        prev.map((m) => m.id === messageId ? { ...m, audioUrl: url } : m)
+        prev.map((m) => m.id === messageId ? { ...m, audioUrl: url, audioBlob: blob } : m)
       );
 
       playAudioUrl(url, messageId);
@@ -675,30 +679,48 @@ export default function AICloneChat({
                 {/* Audio speaker trigger for AI messages */}
                 {!isUser && clonedVoiceId && !msg.id.startsWith("system") && (
                   <div className="mt-2.5 pt-2 border-t border-black/10 flex items-center justify-between">
-                    <button
-                      onClick={() => isPlaying ? stopPlayback() : speakResponse(msg.content, msg.id, msg.audioUrl)}
-                      className={`px-2.5 py-1.5 border-2 border-black font-mono font-bold text-[9px] uppercase tracking-wider transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px] flex items-center space-x-1.5 ${
-                        isPlaying 
-                          ? "bg-industrial-orange text-black" 
-                          : "bg-white text-black hover:bg-industrial-bg"
-                      }`}
-                    >
-                      {isPlaying ? (
-                        <>
-                          <Pause className="w-3 h-3 fill-current" />
-                          <span>{language === "en" ? "Stop Voice" : "Ferma Voce"}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="w-3 h-3" />
-                          <span>
-                            {isGeneratingTTS && currentlyPlayingMessageId === msg.id 
-                              ? (language === "en" ? "Generating..." : "Generazione...") 
-                              : (language === "en" ? "Speak Response" : "Riproduci")}
-                          </span>
-                        </>
+                    <div className="flex gap-1.5 items-center">
+                      <button
+                        onClick={() => isPlaying ? stopPlayback() : speakResponse(msg.content, msg.id, msg.audioUrl)}
+                        className={`px-2.5 py-1.5 border-2 border-black font-mono font-bold text-[9px] uppercase tracking-wider transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px] flex items-center space-x-1.5 ${
+                          isPlaying 
+                            ? "bg-industrial-orange text-black" 
+                            : "bg-white text-black hover:bg-industrial-bg"
+                        }`}
+                      >
+                        {isPlaying ? (
+                          <>
+                            <Pause className="w-3 h-3 fill-current" />
+                            <span>{language === "en" ? "Stop Voice" : "Ferma Voce"}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="w-3 h-3" />
+                            <span>
+                              {isGeneratingTTS && currentlyPlayingMessageId === msg.id 
+                                ? (language === "en" ? "Generating..." : "Generazione...") 
+                                : (language === "en" ? "Speak Response" : "Riproduci")}
+                            </span>
+                          </>
+                        )}
+                      </button>
+
+                      {onSaveToCabinet && msg.audioBlob && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const snippet = msg.content.slice(0, 15).replace(/[^a-zA-Z0-9]/g, "_");
+                            const name = `ai_speech_${snippet}_${Date.now().toString().slice(-4)}.mp3`;
+                            onSaveToCabinet(msg.audioBlob!, name, 'chat_tts');
+                          }}
+                          className="px-2.5 py-1.5 border-2 border-black font-mono font-bold text-[9px] uppercase tracking-wider transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px] flex items-center space-x-1 bg-white hover:bg-industrial-bg text-black"
+                          title={language === "en" ? "Save this audio to your library" : "Salva questo audio nell'archivio"}
+                        >
+                          <FolderHeart className="w-3 h-3 text-industrial-orange" />
+                          <span>{language === "en" ? "Save Vault" : "Salva"}</span>
+                        </button>
                       )}
-                    </button>
+                    </div>
                     
                     {/* Tiny pulsing indicator during play */}
                     {isPlaying && (

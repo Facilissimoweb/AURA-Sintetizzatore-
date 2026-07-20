@@ -9,6 +9,7 @@ import configHandler from "./api/config";
 import chatHandler from "./api/chat";
 import cloneVoiceHandler from "./api/clone-voice";
 import ttsHandler from "./api/tts";
+import recordsHandler from "./api/records";
 
 dotenv.config();
 
@@ -16,6 +17,9 @@ const PORT = 3000;
 
 async function startServer() {
   const app = express();
+
+  // Serve physical records folder as static files
+  app.use("/records", express.static(path.join(process.cwd(), "records")));
 
   // Multer in-memory storage for handling audio uploads
   const upload = multer({
@@ -34,6 +38,10 @@ async function startServer() {
   app.post("/api/chat", chatHandler);
   app.post("/api/clone-voice", upload.single("voice_sample"), cloneVoiceHandler);
   app.post("/api/tts", ttsHandler);
+  
+  // Physical records folder endpoints
+  app.get("/api/records", recordsHandler);
+  app.post("/api/records", upload.single("audio_file"), recordsHandler);
 
   // ----------------------------------------------------
   // VITE OR STATIC FILE SERVING

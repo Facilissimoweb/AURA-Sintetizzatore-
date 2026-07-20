@@ -20,6 +20,9 @@ import AudioRecorder from './components/AudioRecorder';
 import ControlSlider from './components/ControlSlider';
 import Footer from './components/Footer';
 import AICloneChat from './components/AICloneChat';
+import SavedCabinet from './components/SavedCabinet';
+
+import { SavedFileRecord, getAllAudioFiles, saveAudioFile, deleteAudioFile, updateAudioFileName } from './lib/db';
 
 import { SYNTH_PRESETS } from './data/presets';
 import { workletProcessorCode } from './lib/audioWorkletCode';
@@ -110,6 +113,204 @@ export default function App() {
     }, 4000);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  // Saved files list with temporary object URLs
+  const [savedFiles, setSavedFiles] = useState<(SavedFileRecord & { url: string })[]>([]);
+  const [serverFolders, setServerFolders] = useState<{ name: string; files: any[] }[]>([]);
+
+  // Fetch folders from the server records directory
+  const fetchServerFolders = async () => {
+    try {
+      const res = await fetch('/api/records');
+      if (res.ok) {
+        const data = await res.json();
+        setServerFolders(data.folders || []);
+      }
+    } catch (err) {
+      console.error('Failed to load server folders:', err);
+    }
+  };
+
+  // Load saved audio files on mount
+  useEffect(() => {
+    let active = true;
+    let urlsToRevoke: string[] = [];
+
+    getAllAudioFiles()
+      .then((records) => {
+        if (!active) return;
+        const filesWithUrls = records.map((rec) => {
+          const url = URL.createObjectURL(rec.blob);
+          urlsToRevoke.push(url);
+          return {
+            ...rec,
+            url,
+          };
+        });
+        setSavedFiles(filesWithUrls);
+      })
+      .catch((err) => console.error('Failed to load saved audio files:', err));
+
+    // Also fetch server folders on mount
+    fetchServerFolders();
+
+    return () => {
+      active = false;
+      urlsToRevoke.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  const handleSaveToServer = async (blob: Blob, name: string, folderName: string) => {
+    const formData = new FormData();
+    formData.append('audio_file', blob, name);
+    formData.append('folderName', folderName);
+    formData.append('customName', name);
+
+    try {
+      const res = await fetch('/api/records?action=save-file', {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        await fetchServerFolders();
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to save file to server:', err);
+      return false;
+    }
+  };
+
+  const handleSaveFile = async (
+    blob: Blob,
+    name: string,
+    source: 'modulator' | 'chat_tts' | 'user_upload',
+    customServerFolder?: string
+  ) => {
+    const id = `audio-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const record: SavedFileRecord = {
+      id,
+      name,
+      blob,
+      timestamp: Date.now(),
+      size: blob.size,
+      source,
+    };
+
+    try {
+      // Save locally
+      await saveAudioFile(record);
+      const url = URL.createObjectURL(blob);
+      setSavedFiles((prev) => [
+        { ...record, url },
+        ...prev,
+      ]);
+
+      // Mirror to physical server folder
+      const serverFolder = customServerFolder || (source === 'modulator' ? 'modulator' : source === 'chat_tts' ? 'ai_chat' : 'uploads');
+      await handleSaveToServer(blob, name, serverFolder);
+
+      triggerToast(
+        language === 'en'
+          ? `File "${name}" saved to Vault & Server folder /records/${serverFolder}! `
+          : `File "${name}" salvato nel Vault e nella cartella Server /records/${serverFolder}!`
+      );
+    } catch (err) {
+      console.error('Failed to save file:', err);
+      triggerToast(
+        language === 'en' ? 'Failed to save file.' : 'Errore nel salvataggio del file.',
+        'error'
+      );
+    }
+  };
+
+  const handleDeleteSavedFile = async (id: string) => {
+    try {
+      const file = savedFiles.find((f) => f.id === id);
+      if (file) {
+        URL.revokeObjectURL(file.url);
+      }
+      await deleteAudioFile(id);
+      setSavedFiles((prev) => prev.filter((f) => f.id !== id));
+      triggerToast(
+        language === 'en'
+          ? 'File deleted from local Vault!'
+          : 'File rimosso dal Vault locale!'
+      );
+    } catch (err) {
+      console.error('Failed to delete file:', err);
+    }
+  };
+
+  const handleRenameSavedFile = async (id: string, newName: string) => {
+    try {
+      await updateAudioFileName(id, newName);
+      setSavedFiles((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, name: newName } : f))
+      );
+      triggerToast(
+        language === 'en'
+          ? 'File renamed successfully!'
+          : 'File rinominato con successo!'
+      );
+    } catch (err) {
+      console.error('Failed to rename file:', err);
+    }
+  };
+
+  const handleUploadSavedFile = async (file: File) => {
+    await handleSaveFile(file, file.name, 'user_upload');
+  };
+
+  const handleCreateServerFolder = async (folderName: string) => {
+    try {
+      const res = await fetch('/api/records?action=create-folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderName }),
+      });
+      if (res.ok) {
+        await fetchServerFolders();
+        triggerToast(
+          language === 'en'
+            ? `Folder "${folderName}" created on server!`
+            : `Cartella "${folderName}" creata sul server!`
+        );
+        return true;
+      } else {
+        const data = await res.json();
+        triggerToast(data.error || 'Failed to create folder', 'error');
+        return false;
+      }
+    } catch (err) {
+      console.error('Failed to create folder:', err);
+      return false;
+    }
+  };
+
+  const handleDeleteServerFile = async (filePath: string) => {
+    try {
+      const res = await fetch('/api/records?action=delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath }),
+      });
+      if (res.ok) {
+        await fetchServerFolders();
+        triggerToast(
+          language === 'en'
+            ? 'Deleted from Server folder!'
+            : 'Eliminato dalla cartella del Server!'
+        );
+      } else {
+        const data = await res.json();
+        triggerToast(data.error || 'Failed to delete from server', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to delete file from server:', err);
+    }
+  };
 
   // Handle DSP node parameter updates in real-time if context is active
   useEffect(() => {
@@ -451,6 +652,23 @@ export default function App() {
     );
   };
 
+  const handleResetSettings = () => {
+    setPitch(1.0);
+    setDelay(40.0);
+    setWarmth(0.0);
+    setNasal(0.0);
+    setClarity(0.0);
+    setVolume(0.8);
+    setIsAgcEnabled(true);
+    setAgcTargetLevel(0.20);
+    setActivePresetId(null);
+    triggerToast(
+      language === 'en' 
+        ? 'Modeling parameters reset to default values!' 
+        : 'Parametri del modulatore azzerati ai valori naturali!'
+    );
+  };
+
   return (
     <div className="bg-industrial-bg text-black min-h-screen flex flex-col overflow-x-hidden font-sans antialiased">
       {/* Dynamic Navigation Header */}
@@ -458,29 +676,38 @@ export default function App() {
         language={language} 
         setLanguage={setLanguage} 
         isEngineRunning={isEngineRunning} 
+        toggleEngine={toggleEngine}
+        showSafetyBanner={showSafetyBanner}
+        setShowSafetyBanner={setShowSafetyBanner}
+        onResetSettings={handleResetSettings}
       />
 
       <main className="flex-1 lg:grid lg:grid-cols-[290px_1fr_290px] xl:grid-cols-[350px_1fr_350px] items-stretch border-b-2 border-black bg-industrial-bg">
         
         {/* COLUMN 1: PRESETS & CAPTURE */}
         <section className="p-4 sm:p-5 border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col space-y-6 justify-start bg-neutral-50/30">
-          <PresetSelector
-            presets={SYNTH_PRESETS}
-            activePresetId={activePresetId}
-            onSelectPreset={handleSelectPreset}
-            language={language}
-          />
-          <AudioRecorder
-            isEngineRunning={isEngineRunning}
-            audioCtx={audioCtxRef.current}
-            outputNode={analyserNodeRef.current}
-            language={language}
-            onUseForClone={handleUseForClone}
-          />
+          <div id="section-presets">
+            <PresetSelector
+              presets={SYNTH_PRESETS}
+              activePresetId={activePresetId}
+              onSelectPreset={handleSelectPreset}
+              language={language}
+            />
+          </div>
+          <div id="section-capture">
+            <AudioRecorder
+              isEngineRunning={isEngineRunning}
+              audioCtx={audioCtxRef.current}
+              outputNode={analyserNodeRef.current}
+              language={language}
+              onUseForClone={handleUseForClone}
+              onSaveToCabinet={(blob, name) => handleSaveFile(blob, name, 'modulator')}
+            />
+          </div>
         </section>
 
         {/* COLUMN 2: CORE MODULATOR CONTROL */}
-        <section className="p-4 sm:p-5 border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col space-y-5 justify-between bg-white">
+        <section id="section-modulator" className="p-4 sm:p-5 border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col space-y-5 justify-between bg-white">
           <div className="space-y-5">
             
             {/* Larsen Warning Alert Banner */}
@@ -748,29 +975,51 @@ export default function App() {
         <section className="p-4 sm:p-5 flex flex-col space-y-6 justify-start bg-neutral-50/30">
           
           {/* Visual Analyzer Wave/Spectrum Screen */}
-          <Visualizer
-            analyserNode={analyserNodeRef.current}
-            isEngineRunning={isEngineRunning}
-            language={language}
-          />
+          <div id="section-visualizer" className="w-full">
+            <Visualizer
+              analyserNode={analyserNodeRef.current}
+              isEngineRunning={isEngineRunning}
+              language={language}
+            />
+          </div>
 
           {/* AI Voice Clone Chatbot Section */}
-          <AICloneChat 
-            language={language}
-            recordedBlob={recordedBlob}
-            recordedUrl={recordedUrl}
-            onClearRecorded={() => {
-              setRecordedBlob(null);
-              setRecordedUrl(null);
-            }}
-          />
+          <div id="section-chat" className="w-full">
+            <AICloneChat 
+              language={language}
+              recordedBlob={recordedBlob}
+              recordedUrl={recordedUrl}
+              onClearRecorded={() => {
+                setRecordedBlob(null);
+                setRecordedUrl(null);
+              }}
+              onSaveToCabinet={(blob, name) => handleSaveFile(blob, name, 'chat_tts')}
+            />
+          </div>
+
+          {/* Saved Audio Vault Cabinet */}
+          <div id="section-cabinet" className="w-full">
+            <SavedCabinet
+              language={language}
+              savedFiles={savedFiles}
+              onDeleteFile={handleDeleteSavedFile}
+              onRenameFile={handleRenameSavedFile}
+              onUploadFile={handleUploadSavedFile}
+              serverFolders={serverFolders}
+              onCreateServerFolder={handleCreateServerFolder}
+              onDeleteServerFile={handleDeleteServerFile}
+              onSaveToServer={handleSaveToServer}
+            />
+          </div>
 
           {/* Signal Flow Pipeline Chart */}
-          <SignalPipeline
-            isEngineRunning={isEngineRunning}
-            language={language}
-            stats={stats}
-          />
+          <div id="section-pipeline" className="w-full">
+            <SignalPipeline
+              isEngineRunning={isEngineRunning}
+              language={language}
+              stats={stats}
+            />
+          </div>
         </section>
 
       </main>
