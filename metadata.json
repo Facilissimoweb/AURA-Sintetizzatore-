@@ -1,0 +1,6 @@
+{
+  "name": "Vocal Synthesizer",
+  "description": "A mobile-first real-time natural vocal synthesizer and modulator using HTML5 Web Audio API and AudioWorklets.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
