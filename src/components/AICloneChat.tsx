@@ -639,6 +639,23 @@ export default function AICloneChat({
         </div>
       )}
 
+      {/* Info helper regarding Groq API key if missing */}
+      {!config.hasGroqKey && (
+        <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-3.5 flex items-start space-x-2.5">
+          <Sparkles className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0 animate-pulse" />
+          <div className="text-[10px] sm:text-xs text-slate-600 leading-relaxed">
+            <p className="font-bold text-indigo-800">
+              {language === "en" ? "⚡ Ultra-Fast Chat with Groq" : "⚡ Chat Ultra-Rapida con Groq"}
+            </p>
+            <p className="mt-0.5">
+              {language === "en"
+                ? "This chatbot can use Groq's high-speed Llama-3 models for near-instant responses! Get a free Groq API key and add it as VOCAL_GROQ_API_KEY in the .env file. For now, the system falls back to Gemini 2.5, keeping your experience fully operational!"
+                : "Questo chatbot può usare i velocissimi modelli Llama-3 di Groq per risposte quasi istantanee! Ottieni una chiave API Groq gratuita e aggiungila come VOCAL_GROQ_API_KEY nel file .env. Nel frattempo, il sistema esegue il fallback su Gemini 2.5 per una piena operatività!"}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Chat Messages Frame */}
       <div className="border border-slate-100 bg-slate-50 rounded-2xl p-3 sm:p-4 h-[320px] overflow-y-auto flex flex-col space-y-3 scrollbar-thin scrollbar-thumb-slate-200">
         {messages.map((msg) => {
