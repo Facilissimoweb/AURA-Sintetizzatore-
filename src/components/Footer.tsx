@@ -6,16 +6,14 @@ interface FooterProps {
 
 export default function Footer({ language }: FooterProps) {
   return (
-    <footer className="border-t border-slate-100 bg-white py-6 text-center text-[10px] sm:text-xs text-slate-400 font-medium px-4">
-      <div className="max-w-7xl mx-auto space-y-1.5">
-        <p className="leading-relaxed">
-          {language === 'en'
-            ? 'AURA Studio leverages parallel Web Audio AudioWorklet workers to prevent latency, phase cancellation, and digital distortion.'
-            : 'AURA Studio utilizza il calcolo parallelo via AudioWorklet Web API per prevenire la latenza e fruscii metallici.'}
-        </p>
-        <p className="text-slate-500 font-bold">
-          © 2026 AURA Audio Technologies. {language === 'en' ? 'All rights reserved.' : 'Tutti i diritti riservati.'}
-        </p>
+    <footer className="border-t-2 border-black bg-white py-4.5 px-6 sm:px-8 flex flex-col sm:flex-row justify-between items-center gap-3 font-mono text-[9px] sm:text-[10px] text-black font-semibold uppercase tracking-wider">
+      <div>
+        {language === 'en'
+          ? 'SYSTEM: AUDIO_WORKLET_OK // STABLE_LATENCY_20MS'
+          : 'SISTEMA: AUDIO_WORKLET_OK // LATENZA_STABILE_20MS'}
+      </div>
+      <div>
+        © 2026 AURA AUDIO TECHNOLOGIES. {language === 'en' ? 'ALL RIGHTS RESERVED.' : 'TUTTI I DIRITTI RISERVATI.'}
       </div>
     </footer>
   );

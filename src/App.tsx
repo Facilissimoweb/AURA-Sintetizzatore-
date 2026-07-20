@@ -334,7 +334,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col overflow-x-hidden antialiased">
+    <div className="bg-industrial-bg text-black min-h-screen flex flex-col overflow-x-hidden font-sans antialiased">
       {/* Dynamic Navigation Header */}
       <Header 
         language={language} 
@@ -342,62 +342,70 @@ export default function App() {
         isEngineRunning={isEngineRunning} 
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col space-y-6">
+      <main className="flex-1 lg:grid lg:grid-cols-[290px_1fr_290px] xl:grid-cols-[350px_1fr_350px] items-stretch border-b-2 border-black bg-industrial-bg">
         
-        {/* Anti-Feedback Safety Warning Banner */}
-        {showSafetyBanner && (
-          <div className="bg-amber-50/80 border border-amber-200/80 rounded-3xl p-4 sm:p-5 flex items-start justify-between text-amber-900 relative shadow-xl shadow-amber-100/30 backdrop-blur-md">
-            <div className="flex items-start space-x-3.5">
-              <ShieldAlert className="w-5.5 h-5.5 flex-shrink-0 text-amber-600 mt-0.5" />
-              <div>
-                <h4 className="font-extrabold text-xs sm:text-sm tracking-wide">
-                  {language === 'en' ? 'Larsen Feedback Warning' : 'Prevenzione Larsen (Fischio di Ritorno)'}
-                </h4>
-                <p className="text-[11px] sm:text-xs text-amber-800/85 mt-1 leading-relaxed max-w-2xl">
-                  {language === 'en'
-                    ? 'To avoid uncomfortable high-pitch feedback loops, please wear headphones or earbuds before starting the vocal modulator.'
-                    : 'Per testare l\'elaborazione della tua voce senza fastidiosi fischi, indossa le cuffie o gli auricolari prima di attivare il microfono.'}
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={() => setShowSafetyBanner(false)}
-              className="text-amber-500/60 hover:text-amber-800 p-1 rounded-lg transition-colors"
-              title="Close safety warning"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        {/* COLUMN 1: PRESETS & CAPTURE */}
+        <section className="p-4 sm:p-5 border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col space-y-6 justify-start bg-neutral-50/30">
+          <PresetSelector
+            presets={SYNTH_PRESETS}
+            activePresetId={activePresetId}
+            onSelectPreset={handleSelectPreset}
+            language={language}
+          />
+          <AudioRecorder
+            isEngineRunning={isEngineRunning}
+            audioCtx={audioCtxRef.current}
+            outputNode={analyserNodeRef.current}
+            language={language}
+            onUseForClone={handleUseForClone}
+          />
+        </section>
 
-        {/* Central Dashboard Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          
-          {/* Main Controls Section (Left Column) */}
-          <section className="lg:col-span-7 flex flex-col space-y-6">
+        {/* COLUMN 2: CORE MODULATOR CONTROL */}
+        <section className="p-4 sm:p-5 border-b-2 lg:border-b-0 lg:border-r-2 border-black flex flex-col space-y-5 justify-between bg-white">
+          <div className="space-y-5">
             
-            {/* Quick Presets Selector Grid */}
-            <PresetSelector
-              presets={SYNTH_PRESETS}
-              activePresetId={activePresetId}
-              onSelectPreset={handleSelectPreset}
-              language={language}
-            />
-
-            {/* Vocal Modeling Sliders Panel */}
-            <div className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-100/50 flex-1 flex flex-col justify-between">
-              <div className="space-y-6">
-                
-                {/* Panel Title */}
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            {/* Larsen Warning Alert Banner */}
+            {showSafetyBanner && (
+              <div className="bg-[#fff3cc] border-2 border-black p-4 flex items-start justify-between text-black relative">
+                <div className="flex items-start space-x-3">
+                  <ShieldAlert className="w-5 h-5 flex-shrink-0 text-industrial-orange mt-0.5" />
                   <div>
-                    <h3 className="text-sm sm:text-base font-extrabold text-slate-800 tracking-wide uppercase">
-                      {language === 'en' ? 'Vocal Modeling Engine' : 'Modulatore Fisiologico'}
-                    </h3>
-                    <p className="text-[10px] sm:text-xs text-slate-400">
-                      {language === 'en' ? 'Adjust parameters below to sculpt your virtual vocal cords.' : 'Regola le proprietà biologiche delle corde vocali artificiali.'}
+                    <h4 className="font-mono text-[11px] font-bold uppercase tracking-wider">
+                      {language === 'en' ? '[ALERT] Larsen Feedback Warning' : '[ALERT] Prevenzione Larsen'}
+                    </h4>
+                    <p className="font-sans text-[10px] sm:text-xs text-black/75 mt-1 leading-relaxed max-w-2xl">
+                      {language === 'en'
+                        ? 'To avoid uncomfortable high-pitch feedback loops, please wear headphones or earbuds before starting the vocal modulator.'
+                        : 'Per testare l\'elaborazione della tua voce senza fastidiosi fischi, indossa le cuffie o gli auricolari prima di attivare il microfono.'}
                     </p>
                   </div>
+                </div>
+                <button 
+                  onClick={() => setShowSafetyBanner(false)}
+                  className="text-black/50 hover:text-black p-1 transition-colors"
+                  title="Close safety warning"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Vocal Modeling Sliders Panel */}
+            <div className="bg-white border-2 border-black p-4.5 sm:p-6 flex-1 flex flex-col justify-between relative neo-shadow">
+              <div className="space-y-5">
+                
+                {/* Panel Title */}
+                <div className="flex items-center justify-between border-b-2 border-black pb-3">
+                  <div>
+                    <h3 className="font-display text-sm sm:text-base font-bold text-black uppercase tracking-tight">
+                      {language === 'en' ? 'Vocal Modeling Engine' : 'Modulatore Fisiologico'}
+                    </h3>
+                    <span className="font-mono text-[9px] text-black/50 uppercase tracking-wider block mt-0.5">
+                      {language === 'en' ? 'Adjust parameters below to sculpt virtual vocal tracts' : 'Modellazione e sintesi delle corde vocali artificiali'}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[10px] text-black/40 font-bold">[02]</span>
                 </div>
 
                 {/* Slider 1: Vocal Pitch */}
@@ -411,12 +419,12 @@ export default function App() {
                   currentValue={pitch}
                   onChange={(val) => {
                     setPitch(val);
-                    setActivePresetId(null); // Clear preset selection on manual override
+                    setActivePresetId(null);
                   }}
                   leftLabel={language === 'en' ? 'Deep' : 'Grave'}
                   rightLabel={language === 'en' ? 'Acute' : 'Acuto'}
                   helpText={language === 'en' ? 'Shift vocal range up or down using the multi-phase delay lines.' : 'Regola l\'altezza tonale complessiva delle corde vocali senza alterare la velocità.'}
-                  icon={<Waves className="w-4 h-4 text-indigo-600" />}
+                  icon={<Waves className="w-4 h-4" />}
                 />
 
                 {/* Slider 2: Delay Window */}
@@ -433,17 +441,17 @@ export default function App() {
                     setActivePresetId(null);
                   }}
                   helpText={language === 'en' ? 'Lower frames decrease latency but add buzz. 30-45ms is physically optimal.' : 'Tempi bassi riducono il ritardo ma generano fruscii. 30-45ms rappresenta il range biologico.'}
-                  icon={<Sparkle className="w-4 h-4 text-indigo-600" />}
+                  icon={<Sparkle className="w-4 h-4" />}
                 />
 
                 {/* Equalizer Formants Section */}
-                <div className="border-t border-slate-100 pt-6 space-y-5">
+                <div className="border-t-2 border-black pt-5 space-y-4">
                   <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-800 flex items-center">
-                      <Sparkles className="w-4 h-4 mr-1.5 text-indigo-600 animate-pulse" />
-                      {language === 'en' ? 'Vocal Formant & Resonators (Biquad Chain)' : 'Filtri Formantici (Risonanza Biologica)'}
+                    <h4 className="font-mono text-[10px] sm:text-xs font-bold text-black uppercase tracking-wider flex items-center">
+                      <Sparkles className="w-4 h-4 mr-1.5 text-industrial-orange" />
+                      {language === 'en' ? 'Vocal Formant & Resonators' : 'Filtri Formantici (Risonanza Biologica)'}
                     </h4>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="font-sans text-[10px] text-black/50 mt-0.5 leading-normal">
                       {language === 'en' ? 'Adjust gain peaks to simulate different human vocal tract sizes.' : 'Regola i picchi di frequenza per simulare diverse anatomie del cavo orale.'}
                     </p>
                   </div>
@@ -498,108 +506,93 @@ export default function App() {
                 </div>
 
               </div>
+            </div>
+          </div>
 
-              {/* Bottom Volume & Main Activation Row */}
-              <div className="border-t border-slate-100 pt-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-5">
-                
-                {/* Volume Slider */}
-                <div className="w-full sm:w-1/2 space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500 font-bold tracking-wide uppercase flex items-center">
-                      <Volume2 className="w-4 h-4 mr-1 text-indigo-650" />
-                      {language === 'en' ? 'Output Gain' : 'Volume Generale'}
-                    </span>
-                    <span className="font-mono text-slate-800 font-bold">{Math.round(volume * 100)}%</span>
-                  </div>
-                  <input
-                    id="volume-slider"
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={volume}
-                    onChange={(e) => setVolume(parseFloat(e.target.value))}
-                    className="w-full cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none accent-indigo-600 focus:outline-none transition-all"
-                    style={{
-                      background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${volume * 100}%, #e2e8f0 ${volume * 100}%, #e2e8f0 100%)`,
-                    }}
-                  />
-                </div>
-
-                {/* Primary Launch Action Button */}
-                <button
-                  id="power-btn"
-                  onClick={toggleEngine}
-                  disabled={isInitializing}
-                  className={`w-full sm:w-auto px-6 py-4 font-bold text-sm rounded-xl inline-flex items-center justify-center space-x-2.5 shadow-lg transition-all duration-300 active:scale-95 border ${
-                    isEngineRunning
-                      ? 'bg-red-600 hover:bg-red-500 text-white border-red-500 shadow-md shadow-red-100'
-                      : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-500 shadow-xl shadow-indigo-100/60'
-                  }`}
-                >
-                  {isInitializing ? (
-                    <>
-                      <div className="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>{language === 'en' ? 'Booting DSP...' : 'Inizializzazione...'}</span>
-                    </>
-                  ) : isEngineRunning ? (
-                    <>
-                      <Power className="w-4.5 h-4.5 animate-pulse" />
-                      <span>{language === 'en' ? 'Disable Modulator' : 'Spegni Modulatore'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="w-4.5 h-4.5" />
-                      <span>{language === 'en' ? 'Start Vocal Modulator' : 'Avvia Modulatore Naturale'}</span>
-                    </>
-                  )}
-                </button>
-
+          {/* Bottom Volume & Main Activation Row */}
+          <div className="border-t-2 border-black pt-5 mt-5 flex flex-col sm:flex-row items-center justify-between gap-5">
+            
+            {/* Volume Slider */}
+            <div className="w-full sm:w-1/2 space-y-1.5">
+              <div className="flex justify-between text-[10px] font-mono font-bold uppercase tracking-wider">
+                <span className="text-black/60 flex items-center">
+                  <Volume2 className="w-4 h-4 mr-1 text-industrial-orange" />
+                  {language === 'en' ? 'OUTPUT_VOLUME' : 'VOLUME_GENERALE'}
+                </span>
+                <span className="text-black">{Math.round(volume * 100)}%</span>
               </div>
+              <input
+                id="volume-slider"
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                className="brutalist-range"
+              />
             </div>
 
-          </section>
+            {/* Primary Launch Action Button */}
+            <button
+              id="power-btn"
+              onClick={toggleEngine}
+              disabled={isInitializing}
+              className={`w-full sm:w-auto px-6 py-4.5 font-mono font-bold text-xs uppercase tracking-widest border-2 border-black transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px] flex items-center justify-center gap-2 ${
+                isEngineRunning
+                  ? 'bg-industrial-orange text-black font-semibold'
+                  : 'bg-black text-white hover:bg-industrial-orange hover:text-black font-semibold'
+              }`}
+            >
+              {isInitializing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>{language === 'en' ? 'BOOTING_DSP...' : 'CARICAMENTO...'}</span>
+                </>
+              ) : isEngineRunning ? (
+                <>
+                  <Power className="w-4 h-4 animate-pulse" />
+                  <span>{language === 'en' ? 'STOP_MODULATOR' : 'SPEGNI_MODULATORE'}</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4" />
+                  <span>{language === 'en' ? 'START_MODULATOR' : 'AVVIA_MODULATORE'}</span>
+                </>
+              )}
+            </button>
 
-          {/* Graphical & Feedback Section (Right Column) */}
-          <section className="lg:col-span-5 flex flex-col space-y-6">
-            
-            {/* Visual Analyzer Wave/Spectrum Screen */}
-            <Visualizer
-              analyserNode={analyserNodeRef.current}
-              isEngineRunning={isEngineRunning}
-              language={language}
-            />
+          </div>
+        </section>
 
-            {/* Custom Modulator Voice Recorder */}
-            <AudioRecorder
-              isEngineRunning={isEngineRunning}
-              audioCtx={audioCtxRef.current}
-              outputNode={analyserNodeRef.current}
-              language={language}
-              onUseForClone={handleUseForClone}
-            />
+        {/* COLUMN 3: DIAGNOSTICS & CHAT */}
+        <section className="p-4 sm:p-5 flex flex-col space-y-6 justify-start bg-neutral-50/30">
+          
+          {/* Visual Analyzer Wave/Spectrum Screen */}
+          <Visualizer
+            analyserNode={analyserNodeRef.current}
+            isEngineRunning={isEngineRunning}
+            language={language}
+          />
 
-            {/* Signal Flow Pipeline Chart */}
-            <SignalPipeline
-              isEngineRunning={isEngineRunning}
-              language={language}
-              stats={stats}
-            />
+          {/* AI Voice Clone Chatbot Section */}
+          <AICloneChat 
+            language={language}
+            recordedBlob={recordedBlob}
+            recordedUrl={recordedUrl}
+            onClearRecorded={() => {
+              setRecordedBlob(null);
+              setRecordedUrl(null);
+            }}
+          />
 
-          </section>
-
-        </div>
-
-        {/* AI Voice Clone Chatbot Section */}
-        <AICloneChat 
-          language={language}
-          recordedBlob={recordedBlob}
-          recordedUrl={recordedUrl}
-          onClearRecorded={() => {
-            setRecordedBlob(null);
-            setRecordedUrl(null);
-          }}
-        />
+          {/* Signal Flow Pipeline Chart */}
+          <SignalPipeline
+            isEngineRunning={isEngineRunning}
+            language={language}
+            stats={stats}
+          />
+        </section>
 
       </main>
 
@@ -608,17 +601,11 @@ export default function App() {
 
       {/* Floating System-Wide Notification Toast */}
       {toast && (
-        <div className={`fixed bottom-5 right-5 z-50 border text-slate-800 px-5 py-4 rounded-2xl shadow-xl shadow-slate-150/50 flex items-center space-x-3 transition-all duration-300 backdrop-blur-md ${
-          toast.type === 'error' ? 'border-red-100 bg-red-50/95' : 'border-emerald-100 bg-emerald-50/95'
-        }`}>
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-            toast.type === 'error' ? 'bg-red-500/10' : 'bg-emerald-500/10'
-          }`}>
-            <CheckCircle className={`w-4.5 h-4.5 ${
-              toast.type === 'error' ? 'text-red-600' : 'text-emerald-600'
-            }`} />
+        <div className={`fixed bottom-5 right-5 z-50 border-2 border-black text-black px-5 py-3.5 font-mono text-[10px] uppercase tracking-wider flex items-center space-x-3 transition-all duration-100 bg-white shadow-[4px_4px_0px_0px_#000000]`}>
+          <div className="w-6 h-6 border-2 border-black bg-black text-white flex items-center justify-center">
+            <CheckCircle className={`w-3.5 h-3.5 ${toast.type === 'error' ? 'text-industrial-orange' : 'text-emerald-400'}`} />
           </div>
-          <span className="text-xs sm:text-sm font-bold tracking-wide text-slate-800">
+          <span className="font-bold">
             {toast.message}
           </span>
         </div>

@@ -13,47 +13,54 @@ export default function Header({ language, setLanguage, isEngineRunning }: Heade
   };
 
   return (
-    <header className="border-b border-slate-100 bg-white/85 backdrop-blur-md sticky top-0 z-50 px-4 py-3 sm:px-6 shadow-sm">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Brand Logo & Name */}
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
-            <Activity className={`text-white w-5 h-5 ${isEngineRunning ? 'animate-pulse' : ''}`} />
-          </div>
-          <div>
-            <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-slate-900">
-              {language === 'en' ? 'AURA Synth' : 'AURA Sintetizzatore'}
-            </h1>
-            <p className="text-[10px] sm:text-xs text-slate-450 font-medium">
-              {language === 'en' ? 'Vocal Synthesis Engine v2.4' : 'Motore di Sintesi Vocale v2.4'}
-            </p>
-          </div>
+    <header className="grid grid-cols-1 md:grid-cols-[280px_1fr_280px] lg:grid-cols-[350px_1fr_350px] border-b-2 border-black bg-white select-none">
+      {/* Brand box */}
+      <div className="p-4 sm:p-5 border-b-2 md:border-b-0 md:border-r-2 border-black flex items-center space-x-3.5">
+        <div className="font-display font-bold text-xl leading-none border-2 border-black px-2 py-1 bg-industrial-orange text-black">
+          A
         </div>
-
-        {/* Control Badges / Language Switcher */}
-        <div className="flex items-center space-x-2.5">
-          {/* Active Status Badge */}
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold border transition-all ${
-            isEngineRunning 
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80 shadow-sm shadow-emerald-50' 
-              : 'bg-slate-100 text-slate-500 border-slate-200'
-          }`}>
-            <span className={`w-1.5 h-1.5 mr-1.5 rounded-full ${
-              isEngineRunning ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
-            }`}></span>
-            {isEngineRunning ? 'LIVE' : 'BYPASS'}
+        <div>
+          <h1 className="font-display text-base sm:text-lg font-bold uppercase tracking-tight text-black leading-none">
+            {language === 'en' ? 'AURA Studio' : 'AURA Studio'}
+          </h1>
+          <span className="font-mono text-[9px] uppercase tracking-wider text-black/55 block mt-1">
+            {language === 'en' ? 'Synthesis v2.4 // Natural Engine' : 'Sintesi v2.4 // Motore Naturale'}
           </span>
-
-          {/* Language Switch Button */}
-          <button
-            onClick={toggleLanguage}
-            className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs transition-all active:scale-95 shadow-sm"
-            title={language === 'en' ? 'Switch to Italian' : 'Passa all\'Inglese'}
-          >
-            <Globe className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-mono text-[10px] uppercase font-bold">{language}</span>
-          </button>
         </div>
+      </div>
+
+      {/* Stream Status indicator */}
+      <div className="p-4 sm:p-5 border-b-2 md:border-b-0 md:border-r-2 border-black flex items-center justify-start md:justify-center">
+        <div className="flex items-center space-x-2.5">
+          <span className={`w-2.5 h-2.5 border border-black ${isEngineRunning ? 'bg-industrial-orange animate-pulse' : 'bg-transparent'}`} />
+          <span className="font-mono text-[10px] uppercase font-bold tracking-wider text-black">
+            {isEngineRunning 
+              ? (language === 'en' ? 'IO: ACTIVE STREAM' : 'IO: FLUSSO ATTIVO')
+              : (language === 'en' ? 'IO: BYPASS ACTIVE' : 'IO: IN BYPASS')}
+          </span>
+        </div>
+      </div>
+
+      {/* Stats and Language toggler */}
+      <div className="p-4 sm:p-5 flex items-center justify-between md:justify-end gap-5">
+        <div className="flex items-center space-x-5">
+          <span className="font-mono text-[9px] uppercase tracking-wider text-black/60 font-bold">
+            {language === 'en' ? 'Latency' : 'Latenza'}: {isEngineRunning ? '~20ms' : '-- ms'}
+          </span>
+          <span className="font-mono text-[9px] uppercase tracking-wider text-black/60 font-bold">
+            LOC: {language === 'en' ? 'UK' : 'IT'}
+          </span>
+        </div>
+
+        {/* Custom Language Toggler Button */}
+        <button
+          onClick={toggleLanguage}
+          className="font-mono text-[10px] uppercase font-bold tracking-wider px-2 py-1.5 border-2 border-black bg-white hover:bg-industrial-bg active:translate-y-[1px] active:translate-x-[1px] flex items-center gap-1.5"
+          title={language === 'en' ? 'Switch to Italian' : 'Passa all\'Inglese'}
+        >
+          <Globe className="w-3.5 h-3.5 text-black" />
+          <span>{language}</span>
+        </button>
       </div>
     </header>
   );

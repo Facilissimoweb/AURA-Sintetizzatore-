@@ -21,7 +21,6 @@ export default function Visualizer({ analyserNode, isEngineRunning, language }: 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Handle high-DPI screens
     const handleResize = () => {
       if (!containerRef.current || !canvasRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
@@ -64,12 +63,12 @@ export default function Visualizer({ analyserNode, isEngineRunning, language }: 
           const w = canvas.width / dpr;
           const h = canvas.height / dpr;
           ctx.clearRect(0, 0, w, h);
-          ctx.fillStyle = '#0f172a'; // Deep slate blue background
+          ctx.fillStyle = '#000000'; // Pure black background
           ctx.fillRect(0, 0, w, h);
           
           // Draw subtle flat line with wave noise
           ctx.lineWidth = 1.5;
-          ctx.strokeStyle = 'rgba(79, 70, 229, 0.25)'; // Indigo low opacity
+          ctx.strokeStyle = 'rgba(255, 77, 0, 0.25)'; // Industrial Orange low opacity
           ctx.beginPath();
           ctx.moveTo(0, h / 2);
           for (let x = 0; x < w; x++) {
@@ -98,12 +97,12 @@ export default function Visualizer({ analyserNode, isEngineRunning, language }: 
       const w = canvas.width / dpr;
       const h = canvas.height / dpr;
 
-      // Semi-transparent background for premium ghost trail effect
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.18)'; // Premium slate dark backdrop
+      // Semi-transparent background for trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.22)'; // Pure black trail backdrop
       ctx.fillRect(0, 0, w, h);
 
       // Subtle horizontal gridlines
-      ctx.strokeStyle = 'rgba(51, 65, 85, 0.15)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, h * 0.25); ctx.lineTo(w, h * 0.25);
@@ -112,12 +111,11 @@ export default function Visualizer({ analyserNode, isEngineRunning, language }: 
       ctx.stroke();
 
       if (mode === 'waveform') {
-        // OSCILLOSCOPE TIME DOMAIN RENDER
         analyserNode.getByteTimeDomainData(dataArray);
 
         // Render soft backglow wave
         ctx.lineWidth = 4;
-        ctx.strokeStyle = 'rgba(99, 102, 241, 0.25)'; // Indigo-500 backglow
+        ctx.strokeStyle = 'rgba(255, 77, 0, 0.3)'; // Orange backglow
         ctx.beginPath();
         let sliceWidth = w / bufferLength;
         let x = 0;
@@ -135,10 +133,10 @@ export default function Visualizer({ analyserNode, isEngineRunning, language }: 
         ctx.stroke();
 
         // Render crisp foreground sharp wave
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = '#6366f1'; // Indigo-500
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#6366f1';
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ff4d00'; // Solid Industrial Orange
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#ff4d00';
         ctx.beginPath();
         x = 0;
 
@@ -154,33 +152,27 @@ export default function Visualizer({ analyserNode, isEngineRunning, language }: 
         }
         ctx.stroke();
         
-        // Reset shadow for next drawings
         ctx.shadowBlur = 0;
 
       } else {
-        // FREQUENCY DOMAIN SPECTRUM RENDER
         analyserNode.getByteFrequencyData(dataArray);
 
         const barWidth = (w / (bufferLength * 0.6)) * 2.0;
         let x = 0;
 
         for (let i = 0; i < bufferLength * 0.65; i++) {
-          // Boost higher frequencies visual scale slightly for aesthetics
-          const boost = i > bufferLength * 0.25 ? 1.3 : 1.0;
+          const boost = i > bufferLength * 0.25 ? 1.25 : 1.0;
           const barHeight = (dataArray[i] / 255.0) * h * 0.85 * boost;
 
           if (barHeight > 1) {
-            // Draw gradient filled capsule-like bars
             const gradient = ctx.createLinearGradient(x, h, x, h - barHeight);
-            gradient.addColorStop(0, '#3b82f6'); // Blue-500 bottom
-            gradient.addColorStop(0.5, '#6366f1'); // Indigo-500 middle
-            gradient.addColorStop(1, '#a855f7'); // Purple-500 top
+            gradient.addColorStop(0, '#ff4d00'); // Orange bottom
+            gradient.addColorStop(1, '#ffffff'); // White top
 
             ctx.fillStyle = gradient;
             
-            // Draw slightly rounded bar top
             ctx.beginPath();
-            ctx.roundRect(x, h - barHeight, barWidth - 1, barHeight, [2, 2, 0, 0]);
+            ctx.rect(x, h - barHeight, barWidth - 1, barHeight);
             ctx.fill();
           }
 
@@ -199,37 +191,37 @@ export default function Visualizer({ analyserNode, isEngineRunning, language }: 
   }, [isEngineRunning, analyserNode, mode]);
 
   return (
-    <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-5 shadow-xl shadow-slate-100/50 flex flex-col">
+    <div className="bg-white border-2 border-black p-4.5 flex flex-col relative neo-shadow">
       {/* Header section with toggle */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4.5 border-b-2 border-black pb-3">
         <div>
-          <h3 className="text-xs sm:text-sm font-bold text-slate-800 tracking-wide uppercase flex items-center">
-            <Activity className="w-4 h-4 mr-1.5 text-indigo-600 animate-pulse" />
-            {language === 'en' ? 'Vocal Wave & Spectrum' : 'Ondoscopio e Spettro'}
+          <h3 className="font-display text-sm font-bold text-black uppercase flex items-center tracking-tight">
+            <Activity className="w-4.5 h-4.5 mr-1.5 text-industrial-orange" />
+            {language === 'en' ? 'Vocal Wave Diagnostic' : 'Diagnostica Segnale'}
           </h3>
-          <p className="text-[10px] sm:text-xs text-slate-400">
-            {language === 'en' ? 'Real-time audio signal diagnostic' : 'Diagnostica del segnale in tempo reale'}
-          </p>
+          <span className="font-mono text-[9px] text-black/50 uppercase tracking-wider block mt-0.5">
+            {language === 'en' ? 'Signal response oscilloscope' : 'Analizzatore frequenza e forma d\'onda'}
+          </span>
         </div>
 
         {/* Visualizer Mode Toggle Buttons */}
-        <div className="flex bg-slate-50 p-0.5 rounded-xl border border-slate-100">
+        <div className="flex border-2 border-black bg-white p-0.5 font-mono text-[10px]">
           <button
             onClick={() => setMode('waveform')}
-            className={`px-3 py-1 text-[10px] sm:text-xs rounded-lg font-bold transition-all ${
+            className={`px-3 py-1 font-bold uppercase transition-all ${
               mode === 'waveform'
-                ? 'bg-white text-indigo-600 border border-slate-200/50 shadow-sm'
-                : 'text-slate-400 hover:text-slate-600'
+                ? 'bg-black text-white'
+                : 'text-black hover:bg-industrial-bg'
             }`}
           >
             {language === 'en' ? 'Wave' : 'Onda'}
           </button>
           <button
             onClick={() => setMode('frequency')}
-            className={`px-3 py-1 text-[10px] sm:text-xs rounded-lg font-bold transition-all ${
+            className={`px-3 py-1 font-bold uppercase transition-all ${
               mode === 'frequency'
-                ? 'bg-white text-indigo-600 border border-slate-200/50 shadow-sm'
-                : 'text-slate-400 hover:text-slate-600'
+                ? 'bg-black text-white'
+                : 'text-black hover:bg-industrial-bg'
             }`}
           >
             {language === 'en' ? 'Spectrum' : 'Spettro'}
@@ -240,24 +232,23 @@ export default function Visualizer({ analyserNode, isEngineRunning, language }: 
       {/* Visualizer Frame */}
       <div 
         ref={containerRef}
-        className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-slate-900 shadow-[0_8px_30px_rgba(0,0,0,0.15)]"
+        className="relative w-full aspect-[21/9] sm:aspect-video bg-black overflow-hidden border-2 border-black"
       >
         <canvas ref={canvasRef} className="w-full h-full block" />
         
         {/* Waiting / Inactive Overlay */}
         {!isEngineRunning && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 text-slate-500 transition-all duration-300 pointer-events-none p-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-850 flex items-center justify-center mb-2.5 animate-bounce">
-              <MicOff className="w-5 h-5 text-slate-400" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/95 text-white/50 pointer-events-none p-4 text-center select-none">
+            <div className="w-11 h-11 border-2 border-dashed border-white/20 flex items-center justify-center mb-3">
+              <MicOff className="w-4.5 h-4.5 text-white/40" />
             </div>
-            <span className="text-xs font-semibold text-slate-300 tracking-wide uppercase flex items-center">
-              <Sparkles className="w-3.5 h-3.5 mr-1 text-indigo-400 animate-spin" />
-              {language === 'en' ? 'Aura Synthesizer Offline' : 'Aura Modulatore Spento'}
+            <span className="font-mono text-[10px] font-bold text-industrial-orange tracking-widest uppercase flex items-center">
+              SYSTEM_OFFLINE
             </span>
-            <p className="text-[10px] sm:text-xs text-slate-500 mt-1 max-w-xs leading-relaxed">
+            <p className="font-sans text-[10px] text-white/40 mt-1 max-w-xs leading-relaxed">
               {language === 'en' 
-                ? 'Tap "Start Modulator" to stream voice through the custom physical modeling chain.'
-                : 'Avvia il modulatore per visualizzare le armoniche vocali in tempo reale.'}
+                ? 'Initialize system to visualize biological wave harmonics'
+                : 'Avvia il modulatore per visualizzare le armoniche vocali'}
             </p>
           </div>
         )}

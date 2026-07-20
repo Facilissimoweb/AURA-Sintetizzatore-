@@ -29,29 +29,28 @@ export default function ControlSlider({
   helpText,
   icon,
 }: ControlSliderProps) {
-  const percent = ((currentValue - minValue) / (maxValue - minValue)) * 100;
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {/* Label and Badge */}
-      <div className="flex justify-between items-center text-xs">
-        <span className="text-slate-700 font-bold tracking-wide flex items-center">
-          {icon && <span className="mr-1.5 text-indigo-600">{icon}</span>}
+      <div className="flex justify-between items-end">
+        <span className="font-mono text-[10px] sm:text-xs text-black font-semibold uppercase tracking-wider flex items-center">
+          {icon && <span className="mr-1.5 text-industrial-orange">{icon}</span>}
           {label}
         </span>
-        <span className="font-mono text-[10px] sm:text-xs px-2.5 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-md font-bold shadow-sm">
+        <span className="font-mono text-[10px] sm:text-xs text-industrial-orange font-bold">
           {badgeValue}
         </span>
       </div>
 
       {/* Slider range control */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2">
         {leftLabel && (
-          <span className="text-[10px] text-indigo-600 font-bold uppercase w-10 text-left">
+          <span className="font-mono text-[9px] text-black/60 font-semibold uppercase">
             {leftLabel}
           </span>
         )}
         
-        <div className="relative flex-1 group">
+        <div className="relative flex-1">
           <input
             id={id}
             type="range"
@@ -60,22 +59,23 @@ export default function ControlSlider({
             step={step}
             value={currentValue}
             onChange={(e) => onChange(parseFloat(e.target.value))}
-            className="w-full cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none accent-indigo-600 focus:outline-none transition-all group-hover:bg-slate-300"
-            style={{
-              background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${percent}%, #e2e8f0 ${percent}%, #e2e8f0 100%)`,
-            }}
+            className="brutalist-range"
           />
         </div>
 
         {rightLabel && (
-          <span className="text-[10px] text-emerald-600 font-bold uppercase w-10 text-right">
+          <span className="font-mono text-[9px] text-black/60 font-semibold uppercase">
             {rightLabel}
           </span>
         )}
       </div>
 
       {/* Helpful context string */}
-      {helpText && <p className="text-[10px] text-slate-450 leading-normal">{helpText}</p>}
+      {helpText && (
+        <p className="font-sans text-[10px] text-black/50 leading-relaxed font-normal">
+          {helpText}
+        </p>
+      )}
     </div>
   );
 }

@@ -52,43 +52,46 @@ export default function SignalPipeline({ isEngineRunning, language, stats }: Sig
   ];
 
   return (
-    <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-5 shadow-xl shadow-slate-100/50 flex flex-col justify-between">
+    <div className="bg-white border-2 border-black p-4.5 flex flex-col justify-between neo-shadow">
       <div>
-        <h3 className="text-xs sm:text-sm font-bold text-slate-800 tracking-wide uppercase flex items-center mb-4">
-          <Cpu className="w-4 h-4 mr-1.5 text-indigo-600" />
-          {language === 'en' ? 'Active Signal Pipeline' : 'Percorso del Segnale'}
-        </h3>
+        <div className="border-b-2 border-black pb-2 mb-3.5 flex items-center justify-between">
+          <h3 className="font-display text-sm font-bold text-black uppercase flex items-center tracking-tight">
+            <Cpu className="w-4.5 h-4.5 mr-1.5 text-industrial-orange" />
+            {language === 'en' ? 'Active Signal Pipeline' : 'Percorso del Segnale'}
+          </h3>
+          <span className="font-mono text-[9px] text-black/40 font-bold">[02]</span>
+        </div>
 
-        <div className="space-y-3.5 relative">
+        <div className="space-y-4 relative">
           {/* Connecting Vertical Track */}
-          <div className="absolute left-[17px] top-3.5 bottom-3.5 w-0.5 bg-slate-100 z-0"></div>
+          <div className="absolute left-[17px] top-3.5 bottom-3.5 w-[2px] bg-black z-0" />
           
           {/* Pulsing glow line over the connector when running */}
           {isEngineRunning && (
-            <div className="absolute left-[17px] top-3.5 bottom-3.5 w-0.5 bg-gradient-to-b from-indigo-600 via-purple-500 to-emerald-500 z-0 animate-pulse"></div>
+            <div className="absolute left-[17px] top-3.5 bottom-3.5 w-[2px] bg-industrial-orange z-0 animate-pulse" />
           )}
 
-          {steps.map((step, idx) => {
+          {steps.map((step) => {
             const Icon = step.icon;
             return (
               <div key={step.id} className="flex items-start space-x-3.5 z-10 relative">
                 {/* Node bubble */}
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border ${
+                <div className={`w-9 h-9 border-2 border-black flex items-center justify-center transition-all duration-100 ${
                   isEngineRunning 
-                    ? 'bg-indigo-50 border-indigo-100 text-indigo-600 shadow-[0_0_10px_rgba(79,70,229,0.15)]'
-                    : 'bg-slate-50 border-slate-100 text-slate-400'
+                    ? 'bg-black text-white'
+                    : 'bg-white text-black/40 border-black/30'
                 }`}>
-                  <Icon className="w-4.5 h-4.5" />
+                  <Icon className="w-4 h-4" />
                 </div>
 
                 {/* Node Metadata text */}
                 <div className="flex-1 min-w-0 pt-0.5">
-                  <span className={`text-xs font-bold block truncate transition-colors ${
-                    isEngineRunning ? 'text-slate-800' : 'text-slate-400'
+                  <span className={`font-mono text-[11px] font-bold block uppercase tracking-wider ${
+                    isEngineRunning ? 'text-black' : 'text-black/40'
                   }`}>
                     {language === 'en' ? step.titleEn : step.titleIt}
                   </span>
-                  <span className="text-[10px] text-slate-400 block truncate leading-tight mt-0.5">
+                  <span className="font-sans text-[10px] text-black/50 block truncate leading-tight mt-0.5">
                     {isEngineRunning 
                       ? (language === 'en' ? step.descEn : step.descIt) 
                       : (language === 'en' ? 'Inactive (Bypass)' : 'Inattivo (Bypass)')
@@ -102,20 +105,20 @@ export default function SignalPipeline({ isEngineRunning, language, stats }: Sig
       </div>
 
       {/* Latency and sample rate metrics row */}
-      <div className="mt-6 pt-4 border-t border-slate-100 grid grid-cols-2 gap-3 text-xs">
-        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-          <span className="text-slate-450 text-[10px] uppercase font-bold block mb-0.5">
-            {language === 'en' ? 'Estimated Latency' : 'Latenza Stimata'}
+      <div className="mt-6 pt-4 border-t-2 border-black grid grid-cols-2 gap-3 text-xs">
+        <div className="bg-industrial-bg border-2 border-black p-3 flex flex-col justify-between">
+          <span className="font-mono text-[9px] text-black/60 uppercase font-bold block mb-1">
+            {language === 'en' ? 'ESTIMATED_LATENCY' : 'LATENZA_STIMATA'}
           </span>
-          <span className={`font-mono font-extrabold ${isEngineRunning ? 'text-indigo-600' : 'text-slate-400'}`}>
+          <span className={`font-mono font-extrabold text-xs tracking-wider ${isEngineRunning ? 'text-industrial-orange' : 'text-black/40'}`}>
             {isEngineRunning && stats ? `${stats.latency} ms` : '-- ms'}
           </span>
         </div>
-        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-          <span className="text-slate-450 text-[10px] uppercase font-bold block mb-0.5">
-            {language === 'en' ? 'Sample Rate' : 'Frequenza Camp.'}
+        <div className="bg-industrial-bg border-2 border-black p-3 flex flex-col justify-between">
+          <span className="font-mono text-[9px] text-black/60 uppercase font-bold block mb-1">
+            {language === 'en' ? 'SAMPLE_RATE' : 'FREQ_CAMPIONAMENTO'}
           </span>
-          <span className={`font-mono font-extrabold ${isEngineRunning ? 'text-emerald-600' : 'text-slate-400'}`}>
+          <span className={`font-mono font-extrabold text-xs tracking-wider ${isEngineRunning ? 'text-black' : 'text-black/40'}`}>
             {isEngineRunning && stats ? `${stats.sampleRate} Hz` : '-- Hz'}
           </span>
         </div>

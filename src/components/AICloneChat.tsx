@@ -475,25 +475,20 @@ export default function AICloneChat({
   };
 
   return (
-    <div className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-100/50 flex flex-col space-y-6">
+    <div className="bg-white border-2 border-black p-4.5 flex flex-col space-y-4.5 relative neo-shadow">
       
       {/* Title Header */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+      <div className="flex items-center justify-between border-b-2 border-black pb-3">
         <div>
-          <h3 className="text-sm sm:text-base font-extrabold text-slate-800 tracking-wide uppercase flex items-center">
-            <MessageSquare className="w-5 h-5 mr-2 text-indigo-600 animate-pulse" />
-            {language === "en" ? "AI Voice Clone Chatbot" : "Chatbot con Clona Voce AI"}
+          <h3 className="font-display text-sm font-bold text-black uppercase flex items-center tracking-tight">
+            <MessageSquare className="w-4.5 h-4.5 mr-1.5 text-industrial-orange" />
+            {language === "en" ? "AI Voice Clone Chat" : "Chatbot Voce Clona"}
           </h3>
-          <p className="text-[10px] sm:text-xs text-slate-400">
-            {language === "en" 
-              ? "Teach the AI your custom vocal timbre and talk face-to-voice." 
-              : "Insegna all'AI il tuo timbro vocale biologico e dialoga a voce clona."}
-          </p>
+          <span className="font-mono text-[9px] text-black/50 uppercase tracking-wider block mt-0.5">
+            {language === "en" ? "Neural model training & response chat" : "Addestramento e comunicazione neurale"}
+          </span>
         </div>
-        <div className="flex items-center space-x-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] rounded-lg font-bold border border-indigo-100 shadow-sm">
-          <Sparkles className="w-3.5 h-3.5 mr-1" />
-          <span>Gemini 2.5 Flash</span>
-        </div>
+        <div className="font-mono text-[9px] text-black/40 font-bold">[03]</div>
       </div>
 
       {/* Voice Cloning setup section */}
@@ -502,20 +497,20 @@ export default function AICloneChat({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-2xl p-5 text-center transition-all duration-300 relative ${
+          className={`border-2 border-dashed p-4.5 text-center transition-all duration-100 relative ${
             isDragging 
-              ? "border-indigo-500 bg-indigo-50/50 scale-[1.01]" 
-              : "border-slate-200 bg-slate-50 hover:bg-slate-50/80 hover:border-slate-300"
+              ? "border-industrial-orange bg-industrial-orange/5" 
+              : "border-black/35 bg-white hover:border-black hover:bg-industrial-bg"
           }`}
         >
           {isCloning ? (
             <div className="flex flex-col items-center justify-center py-6 space-y-3">
-              <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+              <Loader2 className="w-10 h-10 text-industrial-orange animate-spin" />
               <div>
-                <p className="text-xs font-bold text-slate-800">
-                  {language === "en" ? "Analyzing voice profile..." : "Analisi del profilo vocale..."}
+                <p className="font-mono text-[10px] font-bold text-black uppercase tracking-wider">
+                  {language === "en" ? "Analyzing vocal frequencies..." : "Analisi profilo vocale..."}
                 </p>
-                <p className="text-[10px] text-slate-400 mt-1 max-w-xs leading-relaxed mx-auto">
+                <p className="font-sans text-[10px] text-black/50 mt-1 max-w-xs leading-relaxed mx-auto">
                   {language === "en" 
                     ? "ElevenLabs neural network is mapping your voice's fundamental frequencies and formant resonance..."
                     : "La rete neurale di ElevenLabs sta mappando le tue frequenze armoniche e risonanze formanti..."}
@@ -524,34 +519,34 @@ export default function AICloneChat({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mx-auto text-indigo-600">
-                <Mic className="w-5 h-5" />
+              <div className="w-11 h-11 border-2 border-black flex items-center justify-center mx-auto bg-black text-white">
+                <Mic className="w-4.5 h-4.5" />
               </div>
               
               <div>
-                <h4 className="text-xs sm:text-sm font-extrabold text-slate-800">
-                  {language === "en" ? "Upload your vocal print" : "Mappa la tua impronta vocale"}
+                <h4 className="font-mono text-[11px] font-bold text-black uppercase tracking-wider">
+                  {language === "en" ? "REGISTER VOCAL PRINT" : "MAPPA IMPRONTA VOCALE"}
                 </h4>
-                <p className="text-[10px] sm:text-xs text-slate-400 mt-1 max-w-md mx-auto leading-relaxed">
+                <p className="font-sans text-[10px] text-black/55 mt-1 max-w-md mx-auto leading-relaxed">
                   {language === "en"
-                    ? "Drag & drop an audio sample, upload a file, or record a voice above and click 'Use as AI Chat Voice Clone'!"
-                    : "Trascina qui un file audio, selezionalo, oppure fai una registrazione sopra e premi 'Usa come Clone Vocale'!"}
+                    ? "Drag & drop an audio sample, upload a file, or record a voice above and click 'Train AI Chat'!"
+                    : "Trascina qui un file audio, selezionalo, oppure fai una registrazione sopra e premi 'Invia a Chat AI'!"}
                 </p>
               </div>
 
               {/* Upload Input & Button */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-sm mx-auto">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 max-w-sm mx-auto">
                 <input
                   type="text"
-                  placeholder={language === "en" ? "Give your voice a name..." : "Nome della tua voce..."}
+                  placeholder={language === "en" ? "Voice name..." : "Nome della voce..."}
                   value={voiceName}
                   onChange={(e) => setVoiceName(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full text-xs px-3 py-2 border-2 border-black focus:outline-none bg-white font-mono uppercase tracking-wider"
                 />
                 
-                <label className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm transition-all active:scale-95">
-                  <Upload className="w-4 h-4" />
-                  <span>{language === "en" ? "Select File" : "Seleziona File"}</span>
+                <label className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-industrial-bg border-2 border-black text-black font-mono font-bold text-[10px] uppercase tracking-wider flex items-center justify-center space-x-1.5 cursor-pointer transition-all active:translate-y-[1px] active:translate-x-[1px]">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{language === "en" ? "Select" : "Sfoglia"}</span>
                   <input
                     type="file"
                     accept="audio/*"
@@ -563,16 +558,16 @@ export default function AICloneChat({
 
               {/* Display selected file details */}
               {clonedFileName && (
-                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 max-w-sm mx-auto flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-indigo-700 min-w-0">
-                    <FileAudio className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-[10px] sm:text-xs font-bold truncate">{clonedFileName}</span>
+                <div className="bg-industrial-bg border-2 border-black p-2.5 max-w-sm mx-auto flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-black min-w-0 font-mono text-[10px]">
+                    <FileAudio className="w-4 h-4 flex-shrink-0 text-industrial-orange" />
+                    <span className="font-bold truncate">{clonedFileName}</span>
                   </div>
                   <button 
                     onClick={() => { setClonedBlob(null); setClonedFileName(null); }}
-                    className="text-indigo-400 hover:text-red-500 p-1"
+                    className="text-black/55 hover:text-industrial-orange p-1"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               )}
@@ -581,9 +576,9 @@ export default function AICloneChat({
               {clonedBlob && (
                 <button
                   onClick={triggerVoiceClone}
-                  className="w-full max-w-xs py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-indigo-100 animate-pulse transition-all"
+                  className="w-full max-w-xs py-2 bg-industrial-orange text-black border-2 border-black font-mono font-bold text-[10px] uppercase tracking-wider flex items-center justify-center space-x-2 animate-pulse transition-all"
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   <span>{language === "en" ? "Clone Voice Now" : "Clona la Voce Ora"}</span>
                 </button>
               )}
@@ -592,31 +587,31 @@ export default function AICloneChat({
         </div>
       ) : (
         /* Cloned voice is Active status panel */
-        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-3 text-emerald-800 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
-              <CheckCircle className="w-5 h-5" />
+        <div className="bg-white border-2 border-black p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center space-x-3 text-black min-w-0">
+            <div className="w-9 h-9 border-2 border-black bg-black text-white flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-4.5 h-4.5 text-industrial-orange" />
             </div>
             <div className="min-w-0">
-              <span className="text-xs font-extrabold block truncate">
+              <span className="font-mono text-[11px] font-extrabold block uppercase tracking-wider">
                 {language === "en" ? "AI Voice Clone Active" : "Profilo Vocale AI Attivo"}
               </span>
-              <span className="text-[10px] font-mono text-emerald-600 block truncate">
+              <span className="text-[9px] font-mono text-black/50 block truncate">
                 ID: {clonedVoiceId.substring(0, 16)}...
               </span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
-              {clonedVoiceId === "demo_clone_voice_id" ? "DEMO MODE (LOCAL SYNTH)" : "ELEVENLABS NEURAL"}
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end">
+            <span className="font-mono text-[8px] font-bold px-2 py-0.5 border-2 border-black bg-industrial-bg">
+              {clonedVoiceId === "demo_clone_voice_id" ? "DEMO FALLBACK" : "ELEVENLABS NEURAL"}
             </span>
             <button
               onClick={resetVoiceClone}
-              className="px-3 py-1.5 bg-white border border-emerald-200 text-red-500 hover:bg-red-50 font-bold text-[10px] rounded-lg transition-all flex items-center space-x-1"
+              className="px-3 py-1.5 bg-white border-2 border-black text-black hover:bg-industrial-orange font-mono font-bold text-[9px] uppercase tracking-wider transition-all flex items-center space-x-1"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>{language === "en" ? "Delete Clone" : "Cancella"}</span>
+              <span>{language === "en" ? "Reset" : "Resetta"}</span>
             </button>
           </div>
         </div>
@@ -624,16 +619,16 @@ export default function AICloneChat({
 
       {/* Info helper regarding ElevenLabs API key if missing */}
       {!config.hasElevenLabsKey && (
-        <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3.5 flex items-start space-x-2.5">
-          <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-          <div className="text-[10px] sm:text-xs text-slate-600 leading-relaxed">
-            <p className="font-bold text-amber-800">
-              {language === "en" ? "💡 Premium Voice Cloning Tip" : "💡 Nota per il Clonaggio ad Alta Fedeltà"}
+        <div className="bg-white border-2 border-black p-3.5 flex items-start space-x-2.5">
+          <AlertCircle className="w-4 h-4 text-industrial-orange mt-0.5 flex-shrink-0" />
+          <div className="font-mono text-[9px] sm:text-[10px] text-black leading-relaxed font-semibold uppercase tracking-wide">
+            <p className="font-bold text-industrial-orange">
+              {language === "en" ? "💡 NEURAL CLONING CONFIG" : "💡 CONFIGURAZIONE CLONAZIONE"}
             </p>
-            <p className="mt-0.5">
+            <p className="mt-1 font-normal font-sans text-black/60 lowercase first-letter:uppercase">
               {language === "en"
-                ? "We integrated a real, professional ElevenLabs API engine! To enable real neural cloning, create a free ElevenLabs account, copy your API key and save it as ELEVENLABS_API_KEY inside the .env file. For now, we auto-activated a high-fidelity local browser fallback, so you can test it immediately!"
-                : "Abbiamo integrato un vero motore professionale ElevenLabs! Per attivare la clonazione neurale ad altissima fedeltà, registrati gratis su ElevenLabs, copia la tua chiave API e incollala come ELEVENLABS_API_KEY nel file .env. Nel frattempo, abbiamo attivato un fallback locale ad alta fedeltà nel browser così puoi testarlo subito!"}
+                ? " professional ElevenLabs API engine is integrated! Save your API key as ELEVENLABS_API_KEY inside the secrets inside Settings menu to enable actual premium cloning. Now, a high-fidelity local browser fallback is auto-active for instant testing!"
+                : " motore ElevenLabs professionale integrato! Inserisci la tua chiave come ELEVENLABS_API_KEY nei secret del menu Settings per abilitare la clonazione neurale. Al momento è attivo il fallback locale per test istantanei!"}
             </p>
           </div>
         </div>
@@ -641,23 +636,23 @@ export default function AICloneChat({
 
       {/* Info helper regarding Groq API key if missing */}
       {!config.hasGroqKey && (
-        <div className="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-3.5 flex items-start space-x-2.5">
-          <Sparkles className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0 animate-pulse" />
-          <div className="text-[10px] sm:text-xs text-slate-600 leading-relaxed">
-            <p className="font-bold text-indigo-800">
-              {language === "en" ? "⚡ Ultra-Fast Chat with Groq" : "⚡ Chat Ultra-Rapida con Groq"}
+        <div className="bg-white border-2 border-black p-3.5 flex items-start space-x-2.5">
+          <Sparkles className="w-4 h-4 text-industrial-orange mt-0.5 flex-shrink-0 animate-pulse" />
+          <div className="font-mono text-[9px] sm:text-[10px] text-black leading-relaxed font-semibold uppercase tracking-wide">
+            <p className="font-bold text-black">
+              {language === "en" ? "⚡ FAST_CHAT CONFIG" : "⚡ CONFIGURAZIONE CHAT RAPIDA"}
             </p>
-            <p className="mt-0.5">
+            <p className="mt-1 font-normal font-sans text-black/60 lowercase first-letter:uppercase">
               {language === "en"
-                ? "This chatbot can use Groq's high-speed Llama-3 models for near-instant responses! Get a free Groq API key and add it as VOCAL_GROQ_API_KEY in the .env file. For now, the system falls back to Gemini 2.5, keeping your experience fully operational!"
-                : "Questo chatbot può usare i velocissimi modelli Llama-3 di Groq per risposte quasi istantanee! Ottieni una chiave API Groq gratuita e aggiungila come VOCAL_GROQ_API_KEY nel file .env. Nel frattempo, il sistema esegue il fallback su Gemini 2.5 per una piena operatività!"}
+                ? "This chatbot can use Groq's high-speed Llama-3 models for near-instant responses! Get a free Groq API key and add it as VOCAL_GROQ_API_KEY in the secrets menu. For now, the system falls back to Gemini 2.5, keeping your experience fully operational!"
+                : "Questo chatbot può usare i velocissimi modelli Llama-3 di Groq! Ottieni una chiave API Groq gratuita e aggiungila come VOCAL_GROQ_API_KEY nei secret. Nel frattempo, il sistema esegue il fallback su Gemini 2.5 per una piena operatività!"}
             </p>
           </div>
         </div>
       )}
 
       {/* Chat Messages Frame */}
-      <div className="border border-slate-100 bg-slate-50 rounded-2xl p-3 sm:p-4 h-[320px] overflow-y-auto flex flex-col space-y-3 scrollbar-thin scrollbar-thumb-slate-200">
+      <div className="border-2 border-black bg-white p-3 h-[280px] overflow-y-auto flex flex-col space-y-3 scrollbar-thin">
         {messages.map((msg) => {
           const isUser = msg.role === "user";
           const isPlaying = currentlyPlayingMessageId === msg.id && isPlayingAudio;
@@ -668,38 +663,38 @@ export default function AICloneChat({
               className={`flex flex-col max-w-[85%] ${isUser ? "self-end items-end" : "self-start items-start"}`}
             >
               {/* Message Bubble */}
-              <div className={`p-3 rounded-2xl text-xs leading-normal font-medium shadow-sm border ${
+              <div className={`p-3 border-2 border-black text-xs leading-normal font-semibold font-mono uppercase tracking-wide ${
                 isUser 
-                  ? "bg-indigo-600 border-indigo-600 text-white rounded-br-none" 
+                  ? "bg-black text-white" 
                   : msg.id.startsWith("system") 
-                    ? "bg-blue-50 border-blue-100 text-blue-800 rounded-bl-none" 
-                    : "bg-white border-slate-150 text-slate-800 rounded-bl-none"
+                    ? "bg-industrial-bg text-black" 
+                    : "bg-white text-black"
               }`}>
                 {msg.content}
                 
                 {/* Audio speaker trigger for AI messages */}
                 {!isUser && clonedVoiceId && !msg.id.startsWith("system") && (
-                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <div className="mt-2.5 pt-2 border-t border-black/10 flex items-center justify-between">
                     <button
                       onClick={() => isPlaying ? stopPlayback() : speakResponse(msg.content, msg.id, msg.audioUrl)}
-                      className={`px-2.5 py-1.5 rounded-lg font-bold text-[10px] flex items-center space-x-1.5 transition-all ${
+                      className={`px-2.5 py-1.5 border-2 border-black font-mono font-bold text-[9px] uppercase tracking-wider transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px] flex items-center space-x-1.5 ${
                         isPlaying 
-                          ? "bg-red-50 text-red-600 hover:bg-red-100 border border-red-100" 
-                          : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100"
+                          ? "bg-industrial-orange text-black" 
+                          : "bg-white text-black hover:bg-industrial-bg"
                       }`}
                     >
                       {isPlaying ? (
                         <>
-                          <Pause className="w-3.5 h-3.5 fill-current" />
+                          <Pause className="w-3 h-3 fill-current" />
                           <span>{language === "en" ? "Stop Voice" : "Ferma Voce"}</span>
                         </>
                       ) : (
                         <>
-                          <Volume2 className="w-3.5 h-3.5" />
+                          <Volume2 className="w-3 h-3" />
                           <span>
                             {isGeneratingTTS && currentlyPlayingMessageId === msg.id 
                               ? (language === "en" ? "Generating..." : "Generazione...") 
-                              : (language === "en" ? "Play with My Voice" : "Riproduci con Mia Voce")}
+                              : (language === "en" ? "Speak Response" : "Riproduci")}
                           </span>
                         </>
                       )}
@@ -707,18 +702,18 @@ export default function AICloneChat({
                     
                     {/* Tiny pulsing indicator during play */}
                     {isPlaying && (
-                      <span className="flex space-x-0.5">
-                        <span className="w-1 h-3 bg-red-500 rounded animate-bounce" style={{ animationDelay: "0s" }}></span>
-                        <span className="w-1 h-4 bg-red-500 rounded animate-bounce" style={{ animationDelay: "0.1s" }}></span>
-                        <span className="w-1 h-2.5 bg-red-500 rounded animate-bounce" style={{ animationDelay: "0.2s" }}></span>
+                      <span className="flex space-x-0.5 items-end">
+                        <span className="w-1 h-3 bg-industrial-orange animate-bounce" style={{ animationDelay: "0s" }}></span>
+                        <span className="w-1 h-4 bg-industrial-orange animate-bounce" style={{ animationDelay: "0.1s" }}></span>
+                        <span className="w-1 h-2 bg-industrial-orange animate-bounce" style={{ animationDelay: "0.2s" }}></span>
                       </span>
                     )}
                   </div>
                 )}
               </div>
               
-              <span className="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-wide">
-                {isUser ? (language === "en" ? "You" : "Tu") : "AURA AI"}
+              <span className="font-mono text-[8px] text-black/40 mt-1 uppercase font-bold tracking-widest">
+                {isUser ? (language === "en" ? "USER" : "UTENTE") : "AURA_AI"}
               </span>
             </div>
           );
@@ -727,53 +722,54 @@ export default function AICloneChat({
         {/* Loading indicators */}
         {isPendingAI && (
           <div className="flex flex-col max-w-[80%] self-start items-start">
-            <div className="p-3 bg-white border border-slate-100 rounded-2xl rounded-bl-none flex items-center space-x-2 text-xs text-slate-400 shadow-sm">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-              <span>{language === "en" ? "Aura is typing..." : "Aura sta rispondendo..."}</span>
+            <div className="p-2.5 bg-white border-2 border-black flex items-center space-x-2 text-[10px] text-black font-mono font-semibold uppercase tracking-wider">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-industrial-orange" />
+              <span>{language === "en" ? "AURA_TYPING..." : "AURA_RISPONDE..."}</span>
             </div>
           </div>
         )}
       </div>
 
       {/* AI Voice waveform analyzer (canvas) */}
-      <div className="bg-slate-950 rounded-2xl p-2 border border-slate-900 shadow-inner overflow-hidden">
-        <div className="flex items-center justify-between px-2 pb-1">
-          <span className="text-[9px] text-slate-500 uppercase font-extrabold tracking-wider flex items-center">
-            <span className={`w-1.5 h-1.5 rounded-full mr-1 ${isPlayingAudio ? "bg-red-500 animate-ping" : "bg-slate-600"}`}></span>
+      <div className="bg-black border-2 border-black p-2 overflow-hidden">
+        <div className="flex items-center justify-between pb-1 px-1">
+          <span className="font-mono text-[8px] text-white/50 uppercase font-extrabold tracking-wider flex items-center">
+            <span className={`w-1.5 h-1.5 border border-black mr-1 ${isPlayingAudio ? "bg-industrial-orange animate-ping" : "bg-white/25"}`}></span>
             {language === "en" ? "AI Voice Wave Output" : "Ondoscopio Uscita Voce AI"}
           </span>
           {isPlayingAudio && (
-            <span className="text-[9px] text-indigo-400 font-mono animate-pulse font-bold">
-              {language === "en" ? "SPEAKING CLONE ACTIVE" : "VOCE CLONATA IN RIPRODUZIONE"}
+            <span className="font-mono text-[8px] text-industrial-orange animate-pulse font-bold tracking-wider">
+              SPEAKING_CLONE_ACTIVE
             </span>
           )}
         </div>
-        <canvas ref={canvasRef} className="w-full h-10 block" width={500} height={40} />
+        <canvas ref={canvasRef} className="w-full h-8 block" width={500} height={32} />
       </div>
 
       {/* Chat input form */}
-      <form onSubmit={handleSendMessage} className="flex items-center space-x-2.5">
+      <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
         <input
           type="text"
           placeholder={
             !clonedVoiceId 
-              ? (language === "en" ? "Clone your voice first to start chatting..." : "Clona prima la tua voce per chattare...")
-              : (language === "en" ? "Ask me anything in your voice..." : "Chiedimi qualsiasi cosa con la tua voce...")
+              ? (language === "en" ? "Clone your voice first..." : "Clona prima la tua voce...")
+              : (language === "en" ? "Ask me anything in your voice..." : "Chiedimi qualsiasi cosa...")
           }
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           disabled={isPendingAI}
-          className="flex-1 text-xs sm:text-sm px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-slate-50"
+          className="flex-1 text-xs px-3.5 py-2.5 border-2 border-black focus:outline-none bg-white font-mono uppercase tracking-wider"
         />
         <button
           type="submit"
           disabled={!inputValue.trim() || isPendingAI}
-          className="p-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100 transition-all active:scale-95 disabled:shadow-none"
+          className="p-2.5 bg-black hover:bg-industrial-orange hover:text-black border-2 border-black disabled:bg-neutral-150 disabled:text-neutral-400 text-white flex items-center justify-center transition-all duration-75 active:translate-y-[1px] active:translate-x-[1px]"
         >
-          <Send className="w-4.5 h-4.5" />
+          <Send className="w-4 h-4" />
         </button>
       </form>
       
     </div>
   );
 }
+
